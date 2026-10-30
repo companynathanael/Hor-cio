@@ -34,6 +34,7 @@
     voiceField: $("#voice-field"),
     voiceHint: $("#voice-hint"),
     voiceSelect: $("#opt-voice"),
+    voiceTip: $("#voice-tip"),
     sheet: $("#settings"),
     form: $("#settings-form"),
     themeMeta: document.querySelector('meta[name="theme-color"]'),
@@ -245,6 +246,7 @@
         H.voice.speak(reply, {
           voiceName: settings.voiceName,
           rhythm: settings.rhythm,
+          tone: settings.tone,
           onStart: () => setState("speaking"),
         }),
       ]);
@@ -303,6 +305,40 @@
     else H.voice.stopSpeaking();
   }
 
+  /* Modo vigília: o Horácio atende quando ouve o próprio nome. */
+
+  function wakeHandlers() {
+    return {
+      onCommand: (text) => { if (!busy) send(text, { viaVoice: true }); },
+      onWake: () => startListening(),
+      onStop: (code) => {
+        el.mic.classList.remove("is-standby");
+        if (code === "not-allowed" || code === "service-not-allowed") update({ wake: false });
+        notify(VOICE_ERRORS[code] || "Parei de ouvir meu nome. Toque na tela para eu voltar a ouvir.");
+        if (settings.wake) armWake();
+      },
+    };
+  }
+
+  function startWake() {
+    if (!settings.wake || H.voice.isWakeOn()) return;
+    if (H.voice.startWake(wakeHandlers())) el.mic.classList.add("is-standby");
+  }
+
+  function stopWake() {
+    H.voice.stopWake();
+    el.mic.classList.remove("is-standby");
+  }
+
+  /** O navegador só libera o microfone depois de um toque: espera o primeiro. */
+  function armWake() {
+    const go = () => {
+      document.removeEventListener("pointerdown", go, true);
+      startWake();
+    };
+    document.addEventListener("pointerdown", go, true);
+  }
+
   function setupVoice() {
     const { canListen, canSpeak } = H.voice;
 
@@ -329,6 +365,29 @@
     }
 
     H.voice.onVoicesChanged(fillVoiceSelect);
+
+    if (canListen && settings.wake) armWake();
+
+    // Com o site em segundo plano o navegador desliga o microfone.
+    document.addEventListener("visibilitychange", () => {
+      if (!settings.wake) return;
+      if (document.visibilityState === "hidden") stopWake();
+      else armWake();
+    });
+  }
+
+  function voiceTip() {
+    const v = H.voice.pickVoice(settings.voiceName);
+    if (!v) return "Nenhuma voz em português foi encontrada neste aparelho.";
+    if (H.voice.isMale(v) && H.voice.isNatural(v)) return "";
+    const ua = navigator.userAgent;
+    if (/iPhone|iPad|Macintosh/.test(ua)) {
+      return "Voz mais humana: Ajustes → Acessibilidade → Conteúdo Falado → Vozes → Português (Brasil) → baixe “Felipe (Melhorada)” e escolha-a aqui.";
+    }
+    if (/Android/.test(ua)) {
+      return "Voz masculina: Configurações do Android → Saída de conversão de texto em voz → Mecanismo do Google → Português (Brasil) → escolha uma voz masculina.";
+    }
+    return "Voz mais humana: no Microsoft Edge, escolha “Antonio Online (Natural)”.";
   }
 
   function fillVoiceSelect() {
@@ -338,6 +397,7 @@
     );
     el.voiceSelect.replaceChildren(...options);
     el.voiceSelect.value = list.some((v) => v.name === settings.voiceName) ? settings.voiceName : "";
+    el.voiceTip.textContent = voiceTip();
   }
 
   function restoreMemory() {
@@ -365,6 +425,8 @@
     f.querySelector(`input[name="rhythm"][value="${settings.rhythm}"]`).checked = true;
     f.querySelector(`input[name="speak"][value="${settings.speak}"]`).checked = true;
     f.querySelector("#opt-continuous").checked = settings.continuous;
+    f.querySelector(`input[name="tone"][value="${settings.tone}"]`).checked = true;
+    f.querySelector("#opt-wake").checked = settings.wake;
     fillVoiceSelect();
   }
 
@@ -399,7 +461,13 @@
       else if (t.name === "era") update({ era: t.value });
       else if (t.name === "rhythm") update({ rhythm: t.value });
       else if (t.name === "speak") update({ speak: t.value });
-      else if (t.id === "opt-voice") update({ voiceName: t.value });
+      else if (t.id === "opt-voice") { update({ voiceName: t.value }); el.voiceTip.textContent = voiceTip(); }
+      else if (t.name === "tone") update({ tone: t.value });
+      else if (t.id === "opt-wake") {
+        update({ wake: t.checked });
+        if (t.checked) startWake();
+        else stopWake();
+      }
       else if (t.id === "opt-continuous") update({ continuous: t.checked });
     });
 
@@ -410,6 +478,7 @@
       H.voice.speak(`${greeting}${name}. Eu sou o Horácio, ao seu dispor.`, {
         voiceName: settings.voiceName,
         rhythm: settings.rhythm,
+        tone: settings.tone,
       });
     });
 

@@ -27,7 +27,7 @@ python3 -m http.server 8080
   - **Era:** temas ligados à hora do dia. Aurora, Tarde, Crepúsculo e Meia-noite, ou a opção Automática, que segue o relógio.
   - **Relógio:** formato 24h ou 12h, com ou sem segundos.
   - **Ritmo:** Calmo, Sereno ou Vivo, para a cadência das animações, das respostas e da fala.
-  - **Voz:** responder falando Sempre, Se eu falar ou Nunca; escolha da voz; conversa contínua.
+  - **Voz:** responder falando Sempre, Se eu falar ou Nunca; escolha da voz; tom (Grave, Médio, Natural); conversa contínua; chamar pelo nome.
 
 ## Controle de voz
 
@@ -43,7 +43,19 @@ Usa a Web Speech API do próprio navegador, sem servidor.
 - O microfone exige um endereço seguro: `https://` ou `http://localhost`. Abrindo o arquivo direto (`file://`), o navegador pode bloquear.
 - No Chrome, o reconhecimento de fala é processado pelos servidores do Google, então precisa de internet.
 - Estados do orbe: **ouvindo** (ondas vermelhas), **pensando** (anel dourado girando) e **falando** (núcleo pulsando).
-- O Horácio prefere uma voz masculina em português do Brasil quando o aparelho tem uma (por exemplo, "Felipe" no iPhone).
+- O Horácio escolhe sozinho a melhor voz masculina do aparelho, dando preferência às vozes neurais ("Natural", "Melhorada"). O tom Grave deixa a voz mais encorpada.
+- Vozes mais humanas por aparelho:
+  - **iPhone:** Ajustes → Acessibilidade → Conteúdo Falado → Vozes → Português (Brasil) → baixe "Felipe (Melhorada)".
+  - **Android:** Configurações → Saída de conversão de texto em voz → Mecanismo do Google → Português (Brasil) → voz masculina.
+  - **Computador:** no Microsoft Edge, a voz "Antonio Online (Natural)" é a mais humana.
+
+### Chamar pelo nome (experimental)
+
+Com a opção ligada e o site aberto, basta dizer **"Horácio, que horas são?"**, ou só **"Horácio"** e depois o pedido.
+
+- O navegador só libera o microfone depois de um toque, então ao abrir o site é preciso tocar uma vez na tela. O microfone fica com um ponto vermelho piscando quando está de prontidão.
+- Funciona apenas com o site aberto e a tela ligada; em segundo plano o navegador desliga o microfone.
+- No Android, o Chrome pode emitir um bipe cada vez que reinicia a escuta.
 
 ## Paletas
 
@@ -72,7 +84,8 @@ manifest.webmanifest  permite instalar o site na tela inicial
 ## Próximas etapas
 
 - [x] Controle de voz (ouvir e falar)
-- [ ] Palavra de ativação ("Horácio…") sem precisar tocar
+- [x] Palavra de ativação ("Horácio…") com o site aberto
+- [ ] Voz neural profissional (mais humana e grave)
 - [ ] Integração com um modelo de IA no `brain.js`
 - [ ] Lembretes e alarmes
 - [ ] Funcionamento offline (service worker)

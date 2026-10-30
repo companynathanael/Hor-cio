@@ -11,6 +11,8 @@
     speak: "voz",       // sempre | voz (quando eu falar) | nunca
     voiceName: "",      // "" = escolha automática
     continuous: false,  // volta a ouvir depois de responder
+    tone: "grave",      // grave | medio | natural
+    wake: false,        // modo vigília: chamar pelo nome
   };
 
   const RHYTHM = { calmo: 1.6, sereno: 1, vivo: 0.6 };

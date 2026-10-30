@@ -60,7 +60,7 @@
     {
       match: /\b(voz|microfone|falar comigo|ouvir)\b/,
       reply: () =>
-        "Toque no microfone ou no orbe e fale comigo. Em Personalização, você escolhe minha voz e quando devo responder falando.",
+        "Toque no microfone ou no orbe e fale comigo. Se ativar “Chamar pelo nome” em Personalização, basta dizer “Horácio” com o site aberto.",
     },
     {
       match: /\b(como vai|tudo bem|como voce esta|como esta)\b/,
