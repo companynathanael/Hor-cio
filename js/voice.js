@@ -13,9 +13,9 @@
   const canListen = Boolean(Recognition);
   const canSpeak = Boolean(synth) && "SpeechSynthesisUtterance" in window;
 
-  // Um pouco mais lento que o padrão: dá peso à fala.
-  const RATE = { calmo: 0.85, sereno: 0.95, vivo: 1.06 };
-  const PITCH = { grave: 0.65, medio: 0.82, natural: 1 };
+  // Mais lento e mais grave que o padrão: dá peso e corpo à fala.
+  const RATE = { calmo: 0.8, sereno: 0.88, vivo: 0.98 };
+  const PITCH = { profundo: 0.3, grave: 0.5, medio: 0.75 };
 
   const MALE = /antonio|ant[oô]nio|donato|f[aá]bio|humberto|j[uú]lio|nicolau|val[eé]rio|felipe|daniel|ricardo|thiago|cristiano|duarte|male|masculin|homem/i;
   const FEMALE = /francisca|luciana|maria|joana|brenda|elza|giovanna|leila|let[ií]cia|manuela|thalita|yara|camila|vit[oó]ria|raquel|fernanda|catarina|female|feminin|mulher/i;
@@ -245,7 +245,7 @@
   }
 
   /** Fala o texto. Resolve quando termina (ou é interrompido). */
-  async function speak(text, { voiceName = "", rhythm = "sereno", tone = "grave", onStart } = {}) {
+  async function speak(text, { voiceName = "", rhythm = "sereno", tone = "profundo", onStart } = {}) {
     if (!canSpeak || !text) return;
     synth.cancel();
     await pauseWake(); // não ouvir a si mesmo
@@ -256,7 +256,7 @@
       if (voice) u.voice = voice;
       u.lang = voice?.lang || "pt-BR";
       u.rate = RATE[rhythm] || 1;
-      u.pitch = PITCH[tone] ?? PITCH.grave;
+      u.pitch = PITCH[tone] ?? PITCH.profundo;
       u.onstart = () => onStart?.();
       u.onend = () => resolve();
       u.onerror = () => resolve();

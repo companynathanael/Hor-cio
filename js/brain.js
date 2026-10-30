@@ -3,6 +3,8 @@
   Por enquanto, respostas locais sobre o tempo. Nas próximas versões,
   este módulo passa a conversar com um modelo de IA, mantendo a mesma
   interface: respond(texto, contexto) -> Promise<string>.
+
+  O Horácio tem um único dono: toda resposta o chama pelo nome.
 */
 (function (H) {
   const T = H.time;
@@ -16,6 +18,11 @@
       .replace(/\s+/g, " ")
       .trim();
   }
+
+  // "meu nome é Nathanael", "me chame de Nate"... (no texto original, com acentos)
+  const NAME_PATTERN = /(?:meu nome [ée]|me chame de|me chama de|pode me chamar de|eu sou o|eu sou a)\s+([\p{L}][\p{L}' -]{0,31})/iu;
+
+  let askedName = false;
 
   const intents = [
     {
@@ -88,12 +95,45 @@
     return s.charAt(0).toUpperCase() + s.slice(1);
   }
 
-  async function respond(input, { settings }) {
+  function titleCase(s) {
+    return s.trim().replace(/\s+/g, " ").split(" ").map((w) => capitalize(w.toLowerCase())).join(" ");
+  }
+
+  /**
+   * Chama o dono pelo nome: alterna entre o início ("Nathanael, são 20:10.")
+   * e o fim da primeira frase ("São 20:10, Nathanael.").
+   */
+  function address(reply, name) {
+    if (!name || reply.includes(name)) return reply;
+    if (Math.random() < 0.5) {
+      return `${name}, ${reply.charAt(0).toLowerCase()}${reply.slice(1)}`;
+    }
+    const end = reply.search(/[.!?](\s|$)/);
+    if (end === -1) return `${reply}, ${name}`;
+    return `${reply.slice(0, end)}, ${name}${reply.slice(end)}`;
+  }
+
+  async function respond(input, { settings, setName }) {
+    const named = input.match(NAME_PATTERN);
+    if (named && setName) {
+      const name = titleCase(named[1]);
+      setName(name);
+      return `Muito prazer, ${name}. A partir de agora, é assim que vou chamar você.`;
+    }
+
     const text = normalize(input);
     const now = new Date();
     const intent = intents.find((i) => i.match.test(text));
-    if (intent) return intent.reply({ now, settings, text });
-    return "Ainda estou aprendendo. Nesta versão eu entendo de tempo — pergunte as horas, a data ou quanto falta para o fim do ano.";
+    const reply = intent
+      ? intent.reply({ now, settings, text })
+      : "Ainda estou aprendendo. Nesta versão eu entendo de tempo — pergunte as horas, a data ou quanto falta para o fim do ano.";
+
+    if (!settings.name) {
+      if (askedName) return reply;
+      askedName = true;
+      return `${reply}\nAliás, como devo chamar você? Diga “meu nome é…”.`;
+    }
+    return address(reply, settings.name);
   }
 
   H.brain = { respond };

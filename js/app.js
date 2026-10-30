@@ -230,7 +230,7 @@
     setState("thinking");
     const rhythm = H.settings.RHYTHM[settings.rhythm];
     const [reply] = await Promise.all([
-      H.brain.respond(text, { settings, memory }),
+      H.brain.respond(text, { settings, memory, setName: (name) => update({ name }) }),
       wait((450 + Math.random() * 350) * rhythm),
     ]);
     setState("idle");

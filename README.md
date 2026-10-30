@@ -21,13 +21,14 @@ python3 -m http.server 8080
 - **Saudação pelo período do dia:** Bom dia (05h–12h), Boa tarde (12h–18h) e Boa noite (18h–05h), com o nome do usuário.
 - **Orbe central** em forma de mostrador: o arco dourado marca os segundos, o ponto dourado marca a hora e o vermelho marca os minutos. Os anéis aceleram enquanto o Horácio "pensa".
 - **Conversa por texto** com respostas locais sobre o tempo: horas, data, quanto falta para a meia-noite ou para o Ano Novo, e quanto do ano já passou.
+- **Chama você pelo nome** em todas as respostas. Diga "meu nome é…" ou preencha em Personalização.
 - **Memória:** a conversa e a última visita ficam salvas no aparelho. O Horácio lembra há quanto tempo vocês não conversam.
 - **Controle de voz:** toque no microfone ou no orbe e fale. O Horácio ouve em português, responde falando e, se você quiser, volta a ouvir sozinho.
 - **Personalização baseada em tempo:**
   - **Era:** temas ligados à hora do dia. Aurora, Tarde, Crepúsculo e Meia-noite, ou a opção Automática, que segue o relógio.
   - **Relógio:** formato 24h ou 12h, com ou sem segundos.
   - **Ritmo:** Calmo, Sereno ou Vivo, para a cadência das animações, das respostas e da fala.
-  - **Voz:** responder falando Sempre, Se eu falar ou Nunca; escolha da voz; tom (Grave, Médio, Natural); conversa contínua; chamar pelo nome.
+  - **Voz:** responder falando Sempre, Se eu falar ou Nunca; escolha da voz; tom (Profundo, Grave, Médio); conversa contínua; chamar pelo nome.
 
 ## Controle de voz
 
@@ -43,7 +44,7 @@ Usa a Web Speech API do próprio navegador, sem servidor.
 - O microfone exige um endereço seguro: `https://` ou `http://localhost`. Abrindo o arquivo direto (`file://`), o navegador pode bloquear.
 - No Chrome, o reconhecimento de fala é processado pelos servidores do Google, então precisa de internet.
 - Estados do orbe: **ouvindo** (ondas vermelhas), **pensando** (anel dourado girando) e **falando** (núcleo pulsando).
-- O Horácio escolhe sozinho a melhor voz masculina do aparelho, dando preferência às vozes neurais ("Natural", "Melhorada"). O tom Grave deixa a voz mais encorpada.
+- O Horácio escolhe sozinho a melhor voz masculina do aparelho, dando preferência às vozes neurais ("Natural", "Melhorada"). O tom Profundo (padrão) deixa a voz o mais grave possível.
 - Vozes mais humanas por aparelho:
   - **iPhone:** Ajustes → Acessibilidade → Conteúdo Falado → Vozes → Português (Brasil) → baixe "Felipe (Melhorada)".
   - **Android:** Configurações → Saída de conversão de texto em voz → Mecanismo do Google → Português (Brasil) → voz masculina.
