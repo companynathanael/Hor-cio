@@ -260,10 +260,38 @@ svg { display: block; }
   letter-spacing: 0;
 }
 
+.orb .ring-listen circle {
+  fill: none;
+  stroke: var(--red);
+  stroke-width: 1.2;
+  opacity: 0;
+  transform-origin: 100px 100px;
+}
+
 .orb[data-state="thinking"] .ring-think { opacity: 1; }
 .orb[data-state="thinking"] .core { animation-duration: calc(1.2s * var(--rhythm)); }
 .orb[data-state="thinking"]::before { animation-duration: calc(1.2s * var(--rhythm)); }
 
+/* Ouvindo: ondas vermelhas saindo do núcleo */
+.orb[data-state="listening"]::before {
+  background: radial-gradient(circle, color-mix(in srgb, var(--red) 45%, transparent), transparent 70%);
+  animation-duration: 1.6s;
+}
+.orb[data-state="listening"] .ring-listen circle { animation: ripple 1.8s ease-out infinite; }
+.orb[data-state="listening"] .ring-listen circle + circle { animation-delay: .9s; }
+.orb[data-state="listening"] .core { stroke: var(--red); stroke-opacity: .9; animation-duration: 1.6s; }
+.orb[data-state="listening"] .mono { fill: var(--red); }
+
+/* Falando: o núcleo pulsa como uma voz */
+.orb[data-state="speaking"] .core { animation: talk .5s ease-in-out infinite alternate; }
+.orb[data-state="speaking"]::before { animation-duration: 1s; }
+
+.orb.is-interactive { cursor: pointer; -webkit-user-select: none; user-select: none; }
+.orb.is-interactive:focus-visible { outline: none; }
+.orb.is-interactive:focus-visible .core { stroke-width: 2; stroke-opacity: 1; }
+
+@keyframes ripple { from { opacity: .9; transform: scale(.9); } to { opacity: 0; transform: scale(2.1); } }
+@keyframes talk { from { transform: scale(.97); } to { transform: scale(1.09); } }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
 @keyframes breathe { 0%, 100% { opacity: .65; transform: scale(.94); } 50% { opacity: 1; transform: scale(1.06); } }
@@ -365,6 +393,17 @@ svg { display: block; }
 .icon-btn.ghost { border-color: transparent; }
 .icon-btn:disabled { opacity: .35; cursor: default; }
 
+.mic.is-active {
+  background: var(--red);
+  border-color: transparent;
+  color: var(--bg-2);
+  animation: mic-pulse 1.6s ease-out infinite;
+}
+@keyframes mic-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--red) 55%, transparent); }
+  100% { box-shadow: 0 0 0 14px transparent; }
+}
+
 .icon-btn.send {
   width: 48px; height: 48px;
   background: var(--gold);
@@ -425,6 +464,22 @@ svg { display: block; }
 
 .hint { margin: -4px 0 12px; font-size: .85rem; color: var(--muted); }
 
+.sublabel { display: block; margin: 16px 0 8px; font-size: .85rem; color: var(--muted); }
+
+select.text-input {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 40px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 20px) 50%, calc(100% - 15px) 50%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  text-overflow: ellipsis;
+}
+#voice-field .row { margin-top: 6px; }
+#voice-field .btn { margin-top: 10px; }
+#voice-field.is-unsupported > :not(legend):not(#voice-hint) { display: none; }
+
 .text-input {
   width: 100%;
   height: 46px;
@@ -484,6 +539,7 @@ svg { display: block; }
   cursor: pointer;
 }
 .row:last-child { border-bottom: 0; }
+.row-text small { display: block; font-size: .78rem; color: var(--muted); }
 
 .switch {
   appearance: none;

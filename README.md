@@ -18,10 +18,28 @@ python3 -m http.server 8080
 - **Orbe central** em forma de mostrador: o arco dourado marca os segundos, o ponto dourado marca a hora e o vermelho marca os minutos. Os anéis aceleram enquanto o Horácio "pensa".
 - **Conversa por texto** com respostas locais sobre o tempo: horas, data, quanto falta para a meia-noite ou para o Ano Novo, e quanto do ano já passou.
 - **Memória:** a conversa e a última visita ficam salvas no aparelho. O Horácio lembra há quanto tempo vocês não conversam.
+- **Controle de voz:** toque no microfone ou no orbe e fale. O Horácio ouve em português, responde falando e, se você quiser, volta a ouvir sozinho.
 - **Personalização baseada em tempo:**
   - **Era:** temas ligados à hora do dia. Aurora, Tarde, Crepúsculo e Meia-noite, ou a opção Automática, que segue o relógio.
   - **Relógio:** formato 24h ou 12h, com ou sem segundos.
-  - **Ritmo:** Calmo, Sereno ou Vivo, para a cadência das animações e das respostas.
+  - **Ritmo:** Calmo, Sereno ou Vivo, para a cadência das animações, das respostas e da fala.
+  - **Voz:** responder falando Sempre, Se eu falar ou Nunca; escolha da voz; conversa contínua.
+
+## Controle de voz
+
+Usa a Web Speech API do próprio navegador, sem servidor.
+
+| Navegador | Ouvir | Falar |
+|-----------|-------|-------|
+| Chrome (Android e computador) | ✅ | ✅ |
+| Safari (iPhone e Mac) | ✅ | ✅ |
+| Edge | ✅ | ✅ |
+| Firefox | ❌ | ✅ |
+
+- O microfone exige um endereço seguro: `https://` ou `http://localhost`. Abrindo o arquivo direto (`file://`), o navegador pode bloquear.
+- No Chrome, o reconhecimento de fala é processado pelos servidores do Google, então precisa de internet.
+- Estados do orbe: **ouvindo** (ondas vermelhas), **pensando** (anel dourado girando) e **falando** (núcleo pulsando).
+- O Horácio prefere uma voz masculina em português do Brasil quando o aparelho tem uma (por exemplo, "Felipe" no iPhone).
 
 ## Paletas
 
@@ -42,13 +60,15 @@ css/style.css         estilos, eras e animações
 js/settings.js        preferências (localStorage)
 js/time.js            utilitários de tempo e períodos do dia
 js/brain.js           respostas do Horácio; aqui entrará a IA
+js/voice.js           ouvir e falar (Web Speech API)
 js/app.js             interface: orbe, relógio, conversa e personalização
 manifest.webmanifest  permite instalar o site na tela inicial
 ```
 
 ## Próximas etapas
 
-- [ ] Controle de voz (ouvir e falar)
+- [x] Controle de voz (ouvir e falar)
+- [ ] Palavra de ativação ("Horácio…") sem precisar tocar
 - [ ] Integração com um modelo de IA no `brain.js`
 - [ ] Lembretes e alarmes
 - [ ] Funcionamento offline (service worker)

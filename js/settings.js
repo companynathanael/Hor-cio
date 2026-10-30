@@ -8,6 +8,9 @@
     hour24: true,
     seconds: false,
     rhythm: "sereno",   // calmo | sereno | vivo
+    speak: "voz",       // sempre | voz (quando eu falar) | nunca
+    voiceName: "",      // "" = escolha automática
+    continuous: false,  // volta a ouvir depois de responder
   };
 
   const RHYTHM = { calmo: 1.6, sereno: 1, vivo: 0.6 };

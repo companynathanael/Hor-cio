@@ -28,7 +28,7 @@
 
     <main class="stage">
       <section class="hero">
-        <div class="orb" id="orb" data-state="idle">
+        <div class="orb" id="orb" data-state="idle" aria-label="Horácio">
           <svg viewBox="0 0 200 200" aria-hidden="true">
             <defs>
               <radialGradient id="core-grad" cx="50%" cy="42%" r="62%">
@@ -46,6 +46,7 @@
             <circle class="dot-hour" id="dot-hour" cx="100" cy="36" r="3.4"/>
             <g class="ring-inner"><circle cx="100" cy="100" r="52"/></g>
             <g class="ring-think"><circle cx="100" cy="100" r="52"/></g>
+            <g class="ring-listen"><circle cx="100" cy="100" r="44"/><circle cx="100" cy="100" r="44"/></g>
             <circle class="core" cx="100" cy="100" r="38"/>
             <text class="mono" x="100" y="102">H</text>
           </svg>
@@ -61,7 +62,7 @@
     </main>
 
     <form class="composer" id="composer" autocomplete="off">
-      <button class="icon-btn ghost mic" type="button" disabled aria-label="Controle de voz (em breve)" title="Controle de voz — em breve">
+      <button class="icon-btn ghost mic" id="btn-mic" type="button" disabled aria-label="Falar com o Horácio" aria-pressed="false">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
       </button>
       <input id="input" type="text" placeholder="Fale com o Horácio…" enterkeyhint="send" aria-label="Mensagem para o Horácio">
@@ -135,6 +136,24 @@
         </label>
       </fieldset>
 
+      <fieldset class="field" id="voice-field">
+        <legend class="label">Voz</legend>
+        <p class="hint" id="voice-hint">Toque no microfone ou no orbe para falar.</p>
+        <p class="sublabel">Responder em voz</p>
+        <div class="segmented">
+          <label><input type="radio" name="speak" value="sempre"><span>Sempre</span></label>
+          <label><input type="radio" name="speak" value="voz"><span>Se eu falar</span></label>
+          <label><input type="radio" name="speak" value="nunca"><span>Nunca</span></label>
+        </div>
+        <label class="sublabel" for="opt-voice">Voz do Horácio</label>
+        <select class="text-input" id="opt-voice"></select>
+        <label class="row">
+          <span class="row-text">Conversa contínua<small>Depois de responder, volta a ouvir.</small></span>
+          <input class="switch" type="checkbox" id="opt-continuous">
+        </label>
+        <button class="btn" type="button" id="btn-test-voice">Ouvir o Horácio</button>
+      </fieldset>
+
       <fieldset class="field">
         <legend class="label">Ritmo</legend>
         <p class="hint">A cadência das animações e das respostas.</p>
@@ -158,6 +177,7 @@
   <script src="js/settings.js"></script>
   <script src="js/time.js"></script>
   <script src="js/brain.js"></script>
+  <script src="js/voice.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

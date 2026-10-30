@@ -59,7 +59,8 @@
     },
     {
       match: /\b(voz|microfone|falar comigo|ouvir)\b/,
-      reply: () => "O controle de voz está a caminho. Chegará nas próximas versões.",
+      reply: () =>
+        "Toque no microfone ou no orbe e fale comigo. Em Personalização, você escolhe minha voz e quando devo responder falando.",
     },
     {
       match: /\b(como vai|tudo bem|como voce esta|como esta)\b/,

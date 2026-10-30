@@ -30,6 +30,10 @@
     log: $("#log"),
     composer: $("#composer"),
     input: $("#input"),
+    mic: $("#btn-mic"),
+    voiceField: $("#voice-field"),
+    voiceHint: $("#voice-hint"),
+    voiceSelect: $("#opt-voice"),
     sheet: $("#settings"),
     form: $("#settings-form"),
     themeMeta: document.querySelector('meta[name="theme-color"]'),
@@ -205,25 +209,135 @@
 
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-  async function send(text) {
+  function setState(state) {
+    el.orb.dataset.state = state;
+  }
+
+  function shouldSpeak(viaVoice) {
+    if (!H.voice.canSpeak) return false;
+    return settings.speak === "sempre" || (settings.speak === "voz" && viaVoice);
+  }
+
+  async function send(text, { viaVoice = false } = {}) {
     if (busy) return;
     busy = true;
+    H.voice.stopSpeaking();
     const t = Date.now();
     addMessage("user", text, t);
     remember("user", text, t);
 
-    el.orb.dataset.state = "thinking";
+    setState("thinking");
     const rhythm = H.settings.RHYTHM[settings.rhythm];
     const [reply] = await Promise.all([
       H.brain.respond(text, { settings, memory }),
       wait((450 + Math.random() * 350) * rhythm),
     ]);
-    el.orb.dataset.state = "idle";
+    setState("idle");
 
     const rt = Date.now();
     remember("horacio", reply, rt);
-    await typeInto(addMessage("horacio", "", rt), reply);
+    const node = addMessage("horacio", "", rt);
+    const speaking = shouldSpeak(viaVoice);
+
+    if (speaking) {
+      await Promise.all([
+        typeInto(node, reply),
+        H.voice.speak(reply, {
+          voiceName: settings.voiceName,
+          rhythm: settings.rhythm,
+          onStart: () => setState("speaking"),
+        }),
+      ]);
+      if (el.orb.dataset.state === "speaking") setState("idle");
+    } else {
+      await typeInto(node, reply);
+    }
     busy = false;
+
+    if (viaVoice && speaking && settings.continuous) startListening();
+  }
+
+  /* ---------- Voz ---------- */
+
+  const VOICE_ERRORS = {
+    "not-allowed": "Preciso de permissão para usar o microfone. Libere o acesso nas configurações do navegador.",
+    "service-not-allowed": "O navegador bloqueou o reconhecimento de voz nesta página. Abra o Horácio por um endereço https.",
+    "audio-capture": "Não encontrei nenhum microfone neste aparelho.",
+    network: "Não consegui falar com o serviço de reconhecimento de voz. Verifique sua conexão.",
+  };
+
+  function notify(text) {
+    // Aviso do sistema: aparece na conversa, mas não entra na memória.
+    addMessage("horacio", text);
+  }
+
+  async function startListening() {
+    if (busy || H.voice.isListening()) return;
+    H.voice.unlock();
+    setState("listening");
+    el.mic.classList.add("is-active");
+    el.mic.setAttribute("aria-pressed", "true");
+    el.input.placeholder = "Ouvindo…";
+
+    const text = await H.voice.listen({
+      onInterim: (t) => { el.input.value = t; },
+      onError: (code) => notify(VOICE_ERRORS[code] || "Não consegui ouvir agora. Tente novamente."),
+    });
+
+    el.mic.classList.remove("is-active");
+    el.mic.setAttribute("aria-pressed", "false");
+    el.input.placeholder = "Fale com o Horácio…";
+    el.input.value = "";
+    if (el.orb.dataset.state === "listening") setState("idle");
+
+    if (text) send(text, { viaVoice: true });
+  }
+
+  function toggleListening() {
+    if (H.voice.isListening()) H.voice.stopListening();
+    else startListening();
+  }
+
+  function onOrbActivate() {
+    if (H.voice.canListen) toggleListening();
+    else H.voice.stopSpeaking();
+  }
+
+  function setupVoice() {
+    const { canListen, canSpeak } = H.voice;
+
+    if (canListen) {
+      el.mic.disabled = false;
+      el.mic.addEventListener("click", toggleListening);
+      el.orb.classList.add("is-interactive");
+      el.orb.setAttribute("role", "button");
+      el.orb.setAttribute("tabindex", "0");
+      el.orb.setAttribute("aria-label", "Falar com o Horácio");
+      el.orb.addEventListener("click", onOrbActivate);
+      el.orb.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOrbActivate(); }
+      });
+    } else {
+      el.mic.title = "Este navegador não oferece reconhecimento de voz";
+    }
+
+    if (!canListen && !canSpeak) {
+      el.voiceField.classList.add("is-unsupported");
+      el.voiceHint.textContent = "Este navegador não oferece recursos de voz. Experimente o Chrome ou o Safari.";
+    } else if (!canListen) {
+      el.voiceHint.textContent = "Este navegador não reconhece fala, mas o Horácio ainda pode responder em voz.";
+    }
+
+    H.voice.onVoicesChanged(fillVoiceSelect);
+  }
+
+  function fillVoiceSelect() {
+    const list = H.voice.voices();
+    const options = [new Option("Automática", "")].concat(
+      list.map((v) => new Option(`${v.name} (${v.lang})`, v.name))
+    );
+    el.voiceSelect.replaceChildren(...options);
+    el.voiceSelect.value = list.some((v) => v.name === settings.voiceName) ? settings.voiceName : "";
   }
 
   function restoreMemory() {
@@ -249,6 +363,9 @@
     f.querySelector("#opt-seconds").checked = settings.seconds;
     f.querySelector(`input[name="era"][value="${settings.era}"]`).checked = true;
     f.querySelector(`input[name="rhythm"][value="${settings.rhythm}"]`).checked = true;
+    f.querySelector(`input[name="speak"][value="${settings.speak}"]`).checked = true;
+    f.querySelector("#opt-continuous").checked = settings.continuous;
+    fillVoiceSelect();
   }
 
   function update(patch) {
@@ -281,6 +398,19 @@
       else if (t.id === "opt-seconds") update({ seconds: t.checked });
       else if (t.name === "era") update({ era: t.value });
       else if (t.name === "rhythm") update({ rhythm: t.value });
+      else if (t.name === "speak") update({ speak: t.value });
+      else if (t.id === "opt-voice") update({ voiceName: t.value });
+      else if (t.id === "opt-continuous") update({ continuous: t.checked });
+    });
+
+    $("#btn-test-voice").addEventListener("click", () => {
+      H.voice.unlock();
+      const { greeting } = T.period(new Date());
+      const name = settings.name ? `, ${settings.name}` : "";
+      H.voice.speak(`${greeting}${name}. Eu sou o Horácio, ao seu dispor.`, {
+        voiceName: settings.voiceName,
+        rhythm: settings.rhythm,
+      });
     });
 
     $("#btn-forget").addEventListener("click", () => {
@@ -298,11 +428,14 @@
     renderSince();
     restoreMemory();
     bindSettings();
+    setupVoice();
 
     el.composer.addEventListener("submit", (e) => {
       e.preventDefault();
+      if (H.voice.isListening()) { H.voice.stopListening(); return; }
       const text = el.input.value.trim();
       if (!text || busy) return;
+      H.voice.unlock();
       el.input.value = "";
       send(text);
     });
