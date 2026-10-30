@@ -50,6 +50,16 @@ Usa a Web Speech API do próprio navegador, sem servidor.
   - **Android:** Configurações → Saída de conversão de texto em voz → Mecanismo do Google → Português (Brasil) → voz masculina.
   - **Computador:** no Microsoft Edge, a voz "Antonio Online (Natural)" é a mais humana.
 
+### Voz do ElevenLabs
+
+Em Personalização → Voz → Motor de voz, escolha **ElevenLabs** e preencha:
+
+- **Voice ID:** no ElevenLabs, Voices → My Voices → clique na voz → copie o ID.
+- **Chave de API:** no seu perfil do ElevenLabs, em API Keys.
+- **Modelo:** padrão `eleven_multilingual_v2`; troque se a voz foi feita para outro modelo.
+
+A chave fica salva apenas no aparelho (nunca no código nem no GitHub). Cada resposta falada consome créditos da conta; frases repetidas reaproveitam o áudio já gerado. Se o ElevenLabs falhar (chave, créditos, conexão), o Horácio avisa uma vez e fala com a voz do aparelho.
+
 ### Chamar pelo nome (experimental)
 
 Com a opção ligada e o site aberto, basta dizer **"Horácio, que horas são?"**, ou só **"Horácio"** e depois o pedido.
@@ -86,7 +96,7 @@ manifest.webmanifest  permite instalar o site na tela inicial
 
 - [x] Controle de voz (ouvir e falar)
 - [x] Palavra de ativação ("Horácio…") com o site aberto
-- [ ] Voz neural profissional (mais humana e grave)
+- [x] Voz neural profissional (ElevenLabs)
 - [ ] Integração com um modelo de IA no `brain.js`
 - [ ] Lembretes e alarmes
 - [ ] Funcionamento offline (service worker)

@@ -477,6 +477,12 @@ select.text-input {
   text-overflow: ellipsis;
 }
 #voice-field .row { margin-top: 6px; }
+.segmented.two { grid-template-columns: 1fr 1fr; }
+#voice-field .only-eleven { display: none; }
+#voice-field[data-engine="elevenlabs"] .only-eleven { display: block; }
+#voice-field[data-engine="elevenlabs"] .only-browser { display: none; }
+#voice-field .only-eleven .text-input + .sublabel { margin-top: 12px; }
+#voice-status { margin-top: 10px; }
 .voice-tip { margin: 8px 0 0; font-size: .78rem; }
 .voice-tip:empty { display: none; }
 

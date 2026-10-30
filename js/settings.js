@@ -13,6 +13,10 @@
     continuous: false,  // volta a ouvir depois de responder
     tone: "profundo",   // profundo | grave | medio
     wake: false,        // modo vigília: chamar pelo nome
+    engine: "navegador",              // navegador | elevenlabs
+    elVoiceId: "",
+    elKey: "",                        // fica apenas neste aparelho
+    elModel: "eleven_multilingual_v2",
   };
 
   const RHYTHM = { calmo: 1.6, sereno: 1, vivo: 0.6 };

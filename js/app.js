@@ -243,12 +243,10 @@
     if (speaking) {
       await Promise.all([
         typeInto(node, reply),
-        H.voice.speak(reply, {
-          voiceName: settings.voiceName,
-          rhythm: settings.rhythm,
-          tone: settings.tone,
+        H.voice.speak(reply, speakOptions({
           onStart: () => setState("speaking"),
-        }),
+          onError: (code) => elevenFailed(code),
+        })),
       ]);
       if (el.orb.dataset.state === "speaking") setState("idle");
     } else {
@@ -271,6 +269,32 @@
   function notify(text) {
     // Aviso do sistema: aparece na conversa, mas não entra na memória.
     addMessage("horacio", text);
+  }
+
+  const ELEVEN_ERRORS = {
+    key: "A chave do ElevenLabs foi recusada. Confira em Personalização → Voz.",
+    voice: "Não encontrei essa voz no ElevenLabs. Confira o Voice ID em Personalização → Voz.",
+    model: "Esse modelo do ElevenLabs não está disponível na sua conta. Confira o campo Modelo.",
+    quota: "Os créditos do ElevenLabs acabaram ou o limite da conta foi atingido.",
+    busy: "O ElevenLabs está recebendo pedidos demais agora.",
+    network: "Não consegui falar com o ElevenLabs. Verifique sua conexão.",
+    blocked: "O navegador bloqueou o áudio. Toque na tela e tente de novo.",
+    service: "O ElevenLabs não respondeu como esperado.",
+  };
+
+  function speakOptions(extra = {}) {
+    const eleven = settings.engine === "elevenlabs"
+      ? { key: settings.elKey, voiceId: settings.elVoiceId, model: settings.elModel }
+      : null;
+    return { voiceName: settings.voiceName, rhythm: settings.rhythm, tone: settings.tone, eleven, ...extra };
+  }
+
+  // Avisa cada tipo de falha uma vez por sessão, para não poluir a conversa.
+  const elevenWarned = new Set();
+  function elevenFailed(code) {
+    if (elevenWarned.has(code)) return;
+    elevenWarned.add(code);
+    notify(`${ELEVEN_ERRORS[code] || ELEVEN_ERRORS.service} Por enquanto, uso a voz do aparelho.`);
   }
 
   async function startListening() {
@@ -427,6 +451,12 @@
     f.querySelector("#opt-continuous").checked = settings.continuous;
     f.querySelector(`input[name="tone"][value="${settings.tone}"]`).checked = true;
     f.querySelector("#opt-wake").checked = settings.wake;
+    f.querySelector(`input[name="engine"][value="${settings.engine}"]`).checked = true;
+    f.querySelector("#opt-el-voice").value = settings.elVoiceId;
+    f.querySelector("#opt-el-key").value = settings.elKey;
+    f.querySelector("#opt-el-model").value = settings.elModel;
+    el.voiceField.dataset.engine = settings.engine;
+    $("#voice-status").textContent = "";
     fillVoiceSelect();
   }
 
@@ -469,17 +499,37 @@
         else stopWake();
       }
       else if (t.id === "opt-continuous") update({ continuous: t.checked });
+      else if (t.name === "engine") {
+        update({ engine: t.value });
+        el.voiceField.dataset.engine = t.value;
+      }
+      else if (t.id === "opt-el-voice") update({ elVoiceId: t.value.trim() });
+      else if (t.id === "opt-el-key") update({ elKey: t.value.trim() });
+      else if (t.id === "opt-el-model") update({ elModel: t.value.trim() || H.settings.defaults.elModel });
+      if (t.id?.startsWith("opt-el-") || t.name === "engine") elevenWarned.clear();
     });
 
     $("#btn-test-voice").addEventListener("click", () => {
       H.voice.unlock();
+      const status = $("#voice-status");
+      const usingEleven = settings.engine === "elevenlabs";
+      if (usingEleven && (!settings.elVoiceId || !settings.elKey)) {
+        status.textContent = "Preencha o Voice ID e a chave de API para usar a voz do ElevenLabs.";
+        return;
+      }
+      let failed = false;
+      status.textContent = usingEleven ? "Gerando a voz no ElevenLabs…" : "";
       const { greeting } = T.period(new Date());
       const name = settings.name ? `, ${settings.name}` : "";
-      H.voice.speak(`${greeting}${name}. Eu sou o Horácio, ao seu dispor.`, {
-        voiceName: settings.voiceName,
-        rhythm: settings.rhythm,
-        tone: settings.tone,
-      });
+      H.voice.speak(`${greeting}${name}. Eu sou o Horácio, ao seu dispor.`, speakOptions({
+        onStart: () => {
+          if (usingEleven && !failed) status.textContent = "✓ Voz do ElevenLabs funcionando.";
+        },
+        onError: (code) => {
+          failed = true;
+          status.textContent = `${ELEVEN_ERRORS[code] || ELEVEN_ERRORS.service} Tocando a voz do aparelho no lugar.`;
+        },
+      }));
     });
 
     $("#btn-forget").addEventListener("click", () => {

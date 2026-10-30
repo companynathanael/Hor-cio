@@ -145,14 +145,37 @@
           <label><input type="radio" name="speak" value="voz"><span>Se eu falar</span></label>
           <label><input type="radio" name="speak" value="nunca"><span>Nunca</span></label>
         </div>
-        <label class="sublabel" for="opt-voice">Voz do Horácio</label>
-        <select class="text-input" id="opt-voice"></select>
-        <p class="hint voice-tip" id="voice-tip"></p>
-        <p class="sublabel">Tom</p>
-        <div class="segmented">
-          <label><input type="radio" name="tone" value="profundo"><span>Profundo</span></label>
-          <label><input type="radio" name="tone" value="grave"><span>Grave</span></label>
-          <label><input type="radio" name="tone" value="medio"><span>Médio</span></label>
+        <p class="sublabel">Motor de voz</p>
+        <div class="segmented two">
+          <label><input type="radio" name="engine" value="navegador"><span>Aparelho</span></label>
+          <label><input type="radio" name="engine" value="elevenlabs"><span>ElevenLabs</span></label>
+        </div>
+
+        <div class="only-browser">
+          <label class="sublabel" for="opt-voice">Voz do Horácio</label>
+          <select class="text-input" id="opt-voice"></select>
+          <p class="hint voice-tip" id="voice-tip"></p>
+          <p class="sublabel">Tom</p>
+          <div class="segmented">
+            <label><input type="radio" name="tone" value="profundo"><span>Profundo</span></label>
+            <label><input type="radio" name="tone" value="grave"><span>Grave</span></label>
+            <label><input type="radio" name="tone" value="medio"><span>Médio</span></label>
+          </div>
+        </div>
+
+        <div class="only-eleven">
+          <label class="sublabel" for="opt-el-voice">Voice ID</label>
+          <input class="text-input" id="opt-el-voice" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ex.: 21m00Tcm4TlvDq8ikWAM">
+          <label class="sublabel" for="opt-el-key">Chave de API</label>
+          <input class="text-input" id="opt-el-key" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="sk_…">
+          <label class="sublabel" for="opt-el-model">Modelo</label>
+          <input class="text-input" id="opt-el-model" type="text" list="el-models" autocomplete="off" autocapitalize="off" spellcheck="false">
+          <datalist id="el-models">
+            <option value="eleven_multilingual_v2">
+            <option value="eleven_v3">
+            <option value="eleven_flash_v2_5">
+          </datalist>
+          <p class="hint voice-tip">A chave fica salva só neste aparelho. Cada resposta falada consome créditos da sua conta; frases repetidas reaproveitam o áudio.</p>
         </div>
         <label class="row">
           <span class="row-text">Chamar pelo nome<small>Diga “Horácio, que horas são?” sem tocar em nada. Experimental.</small></span>
@@ -163,6 +186,7 @@
           <input class="switch" type="checkbox" id="opt-continuous">
         </label>
         <button class="btn" type="button" id="btn-test-voice">Ouvir o Horácio</button>
+        <p class="hint voice-tip" id="voice-status" role="status"></p>
       </fieldset>
 
       <fieldset class="field">
@@ -181,7 +205,7 @@
         <button class="btn danger" type="button" id="btn-forget">Esquecer conversa</button>
       </fieldset>
 
-      <footer class="sheet-foot">Horácio · HoV 0.1 · teste-03</footer>
+      <footer class="sheet-foot">Horácio · HoV 0.1 · teste-04</footer>
     </form>
   </dialog>
 

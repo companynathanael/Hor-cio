@@ -1,6 +1,7 @@
 /*
   Voz do Horácio: ouvir (reconhecimento de fala) e falar (síntese de voz).
-  Usa a Web Speech API do navegador — sem servidores próprios.
+  Usa a Web Speech API do navegador — sem servidores próprios — e,
+  opcionalmente, uma voz criada no ElevenLabs.
 
   Dois modos de ouvir:
   - listen(): escuta uma frase (ao tocar no microfone ou no orbe);
@@ -10,8 +11,11 @@
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   const synth = window.speechSynthesis;
 
+  const hasSynth = Boolean(synth) && "SpeechSynthesisUtterance" in window;
+  const audio = typeof Audio === "function" ? new Audio() : null;
+
   const canListen = Boolean(Recognition);
-  const canSpeak = Boolean(synth) && "SpeechSynthesisUtterance" in window;
+  const canSpeak = hasSynth || Boolean(audio);
 
   // Mais lento e mais grave que o padrão: dá peso e corpo à fala.
   const RATE = { calmo: 0.8, sereno: 0.88, vivo: 0.98 };
@@ -203,7 +207,7 @@
   /* ---------- Falar ---------- */
 
   function voices() {
-    if (!canSpeak) return [];
+    if (!hasSynth) return [];
     return synth
       .getVoices()
       .filter((v) => v.lang.toLowerCase().replace("_", "-").startsWith("pt"))
@@ -244,13 +248,81 @@
       .replace(/—/g, ",");
   }
 
-  /** Fala o texto. Resolve quando termina (ou é interrompido). */
-  async function speak(text, { voiceName = "", rhythm = "sereno", tone = "profundo", onStart } = {}) {
-    if (!canSpeak || !text) return;
-    synth.cancel();
-    await pauseWake(); // não ouvir a si mesmo
+  /* ---------- ElevenLabs ---------- */
 
-    await new Promise((resolve) => {
+  const EL_API = "https://api.elevenlabs.io/v1/text-to-speech/";
+  const EL_DEFAULT_MODEL = "eleven_multilingual_v2";
+  const SILENCE = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+
+  const cache = new Map(); // frase → áudio já gerado (economiza créditos)
+  let fetchCtl = null;
+
+  class VoiceError extends Error {
+    constructor(code) {
+      super(code);
+      this.code = code;
+    }
+  }
+
+  function errorCode(status, detail) {
+    const d = String(detail?.status || detail?.code || detail || "").toLowerCase();
+    if (d.includes("quota") || d.includes("credit") || status === 402) return "quota";
+    if (d.includes("voice") || status === 404) return "voice";
+    if (d.includes("model")) return "model";
+    if (status === 401 || status === 403 || d.includes("key")) return "key";
+    if (status === 429) return "busy";
+    return "service";
+  }
+
+  async function elevenAudio(text, { key, voiceId, model }) {
+    const modelId = model || EL_DEFAULT_MODEL;
+    const id = `${voiceId}|${modelId}|${text}`;
+    if (cache.has(id)) return cache.get(id);
+
+    fetchCtl = new AbortController();
+    let res;
+    try {
+      res = await fetch(`${EL_API}${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`, {
+        method: "POST",
+        headers: { "xi-api-key": key, "Content-Type": "application/json", Accept: "audio/mpeg" },
+        body: JSON.stringify({ text, model_id: modelId }),
+        signal: fetchCtl.signal,
+      });
+    } catch (e) {
+      throw new VoiceError(e.name === "AbortError" ? "aborted" : "network");
+    } finally {
+      fetchCtl = null;
+    }
+
+    if (!res.ok) {
+      let detail = "";
+      try {
+        detail = (await res.json()).detail;
+      } catch {}
+      throw new VoiceError(errorCode(res.status, detail));
+    }
+
+    const url = URL.createObjectURL(await res.blob());
+    cache.set(id, url);
+    if (cache.size > 30) {
+      const [oldest, oldUrl] = cache.entries().next().value;
+      URL.revokeObjectURL(oldUrl);
+      cache.delete(oldest);
+    }
+    return url;
+  }
+
+  function play(url, onStart) {
+    return new Promise((resolve, reject) => {
+      audio.onplaying = () => onStart?.();
+      audio.onended = audio.onpause = audio.onerror = () => resolve();
+      audio.src = url;
+      audio.play().catch(() => reject(new VoiceError("blocked")));
+    });
+  }
+
+  function speakBrowser(text, { voiceName = "", rhythm = "sereno", tone = "profundo", onStart } = {}) {
+    return new Promise((resolve) => {
       const u = new SpeechSynthesisUtterance(speakable(text));
       const voice = pickVoice(voiceName);
       if (voice) u.voice = voice;
@@ -262,30 +334,64 @@
       u.onerror = () => resolve();
       synth.speak(u);
     });
+  }
 
-    resumeWake();
+  /**
+   * Fala o texto. Resolve quando termina (ou é interrompido).
+   * Com `eleven` ({ key, voiceId, model }) usa a voz do ElevenLabs; se ela
+   * falhar, avisa por onError(código) e fala com a voz do aparelho.
+   */
+  async function speak(text, opts = {}) {
+    if (!canSpeak || !text) return;
+    stopSpeaking();
+    await pauseWake(); // não ouvir a si mesmo
+
+    try {
+      const el = opts.eleven;
+      if (el?.key && el?.voiceId && audio) {
+        try {
+          await play(await elevenAudio(speakable(text), el), opts.onStart);
+          return;
+        } catch (e) {
+          if (e.code === "aborted") return;
+          opts.onError?.(e.code || "service");
+        }
+      }
+      if (hasSynth) await speakBrowser(text, opts);
+    } finally {
+      resumeWake();
+    }
   }
 
   function stopSpeaking() {
-    if (canSpeak && (synth.speaking || synth.pending)) synth.cancel();
+    fetchCtl?.abort();
+    if (audio && !audio.paused) audio.pause();
+    if (hasSynth && (synth.speaking || synth.pending)) synth.cancel();
   }
 
-  const isSpeaking = () => canSpeak && synth.speaking;
+  const isSpeaking = () =>
+    Boolean(fetchCtl) || Boolean(audio && !audio.paused) || (hasSynth && synth.speaking);
 
   /**
-   * Alguns navegadores (iOS) só liberam a fala após um toque do usuário.
-   * Chamado nos primeiros toques para destravar a síntese.
+   * Alguns navegadores (iOS) só liberam o som após um toque do usuário.
+   * Chamado nos primeiros toques para destravar a fala e o áudio.
    */
   function unlock() {
-    if (unlocked || !canSpeak) return;
+    if (unlocked) return;
     unlocked = true;
-    const u = new SpeechSynthesisUtterance("");
-    u.volume = 0;
-    synth.speak(u);
+    if (hasSynth) {
+      const u = new SpeechSynthesisUtterance("");
+      u.volume = 0;
+      synth.speak(u);
+    }
+    if (audio) {
+      audio.src = SILENCE;
+      audio.play().catch(() => {});
+    }
   }
 
   function onVoicesChanged(fn) {
-    if (canSpeak) synth.addEventListener?.("voiceschanged", fn);
+    if (hasSynth) synth.addEventListener?.("voiceschanged", fn);
   }
 
   H.voice = {
