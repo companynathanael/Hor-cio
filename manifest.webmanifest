@@ -1,0 +1,14 @@
+{
+  "name": "Horácio",
+  "short_name": "Horácio",
+  "description": "Assistente pessoal, guardião do seu tempo.",
+  "lang": "pt-BR",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#221710",
+  "theme_color": "#221710",
+  "icons": [
+    { "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

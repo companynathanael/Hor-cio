@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#221710"/>
+  <circle cx="256" cy="256" r="176" fill="none" stroke="#D4A64F" stroke-width="10"/>
+  <circle cx="256" cy="256" r="136" fill="none" stroke="#B8483B" stroke-width="6" stroke-dasharray="120 40 30 40"/>
+  <text x="256" y="262" font-family="Cinzel, 'Times New Roman', serif" font-weight="600" font-size="150" fill="#D4A64F" text-anchor="middle" dominant-baseline="middle">H</text>
+</svg>

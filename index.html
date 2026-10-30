@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="pt-BR" data-era="crepusculo">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#241812">
+  <meta name="description" content="Horácio — assistente pessoal, guardião do seu tempo.">
+  <title>Horácio</title>
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app" id="app">
+
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-name">Horácio</span>
+        <span class="brand-ver">HoV 0.1</span>
+      </div>
+      <button class="icon-btn ghost" id="btn-settings" type="button" aria-label="Abrir personalização">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+      </button>
+    </header>
+
+    <main class="stage">
+      <section class="hero">
+        <div class="orb" id="orb" data-state="idle">
+          <svg viewBox="0 0 200 200" aria-hidden="true">
+            <defs>
+              <radialGradient id="core-grad" cx="50%" cy="42%" r="62%">
+                <stop offset="0%" style="stop-color:var(--gold);stop-opacity:.55"/>
+                <stop offset="65%" style="stop-color:var(--gold);stop-opacity:.12"/>
+                <stop offset="100%" style="stop-color:var(--gold);stop-opacity:0"/>
+              </radialGradient>
+            </defs>
+            <g class="ticks" id="ticks"></g>
+            <circle class="track" cx="100" cy="100" r="84"/>
+            <circle class="sec-arc" id="sec-arc" cx="100" cy="100" r="84"/>
+            <g class="ring-dash"><circle cx="100" cy="100" r="74"/></g>
+            <circle class="track faint" cx="100" cy="100" r="64"/>
+            <circle class="dot-min" id="dot-min" cx="100" cy="36" r="2.2"/>
+            <circle class="dot-hour" id="dot-hour" cx="100" cy="36" r="3.4"/>
+            <g class="ring-inner"><circle cx="100" cy="100" r="52"/></g>
+            <g class="ring-think"><circle cx="100" cy="100" r="52"/></g>
+            <circle class="core" cx="100" cy="100" r="38"/>
+            <text class="mono" x="100" y="102">H</text>
+          </svg>
+        </div>
+
+        <h1 class="greeting" id="greeting">Boa noite</h1>
+        <p class="clock" id="clock">--:--</p>
+        <p class="date" id="date"></p>
+        <p class="since" id="since"></p>
+      </section>
+
+      <section class="log" id="log" aria-live="polite" aria-label="Conversa"></section>
+    </main>
+
+    <form class="composer" id="composer" autocomplete="off">
+      <button class="icon-btn ghost mic" type="button" disabled aria-label="Controle de voz (em breve)" title="Controle de voz — em breve">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+      </button>
+      <input id="input" type="text" placeholder="Fale com o Horácio…" enterkeyhint="send" aria-label="Mensagem para o Horácio">
+      <button class="icon-btn send" type="submit" aria-label="Enviar">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
+      </button>
+    </form>
+  </div>
+
+  <dialog class="sheet" id="settings" aria-labelledby="settings-title">
+    <form method="dialog" class="sheet-inner" id="settings-form">
+      <div class="sheet-handle" aria-hidden="true"></div>
+      <header class="sheet-head">
+        <h2 id="settings-title">Personalização</h2>
+        <button class="icon-btn ghost" value="close" aria-label="Fechar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </header>
+
+      <div class="field">
+        <label class="label" for="opt-name">Como devo chamar você?</label>
+        <input class="text-input" id="opt-name" type="text" maxlength="32" placeholder="Seu nome" enterkeyhint="done">
+      </div>
+
+      <fieldset class="field">
+        <legend class="label">Era</legend>
+        <p class="hint">O tema acompanha as horas do dia — ou fixe a sua era favorita.</p>
+        <div class="eras">
+          <label class="era era-auto">
+            <input type="radio" name="era" value="auto">
+            <span class="swatch" aria-hidden="true"></span>
+            <span class="era-name">Automática</span>
+            <span class="era-time">segue o relógio</span>
+          </label>
+          <label class="era" data-swatch="aurora">
+            <input type="radio" name="era" value="aurora">
+            <span class="swatch" aria-hidden="true"></span>
+            <span class="era-name">Aurora</span>
+            <span class="era-time">05h – 12h</span>
+          </label>
+          <label class="era" data-swatch="tarde">
+            <input type="radio" name="era" value="tarde">
+            <span class="swatch" aria-hidden="true"></span>
+            <span class="era-name">Tarde</span>
+            <span class="era-time">12h – 18h</span>
+          </label>
+          <label class="era" data-swatch="crepusculo">
+            <input type="radio" name="era" value="crepusculo">
+            <span class="swatch" aria-hidden="true"></span>
+            <span class="era-name">Crepúsculo</span>
+            <span class="era-time">18h – 00h</span>
+          </label>
+          <label class="era" data-swatch="meianoite">
+            <input type="radio" name="era" value="meianoite">
+            <span class="swatch" aria-hidden="true"></span>
+            <span class="era-name">Meia-noite</span>
+            <span class="era-time">00h – 05h</span>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="field">
+        <legend class="label">Relógio</legend>
+        <label class="row">
+          <span>Formato 24 horas</span>
+          <input class="switch" type="checkbox" id="opt-hour24">
+        </label>
+        <label class="row">
+          <span>Mostrar segundos</span>
+          <input class="switch" type="checkbox" id="opt-seconds">
+        </label>
+      </fieldset>
+
+      <fieldset class="field">
+        <legend class="label">Ritmo</legend>
+        <p class="hint">A cadência das animações e das respostas.</p>
+        <div class="segmented">
+          <label><input type="radio" name="rhythm" value="calmo"><span>Calmo</span></label>
+          <label><input type="radio" name="rhythm" value="sereno"><span>Sereno</span></label>
+          <label><input type="radio" name="rhythm" value="vivo"><span>Vivo</span></label>
+        </div>
+      </fieldset>
+
+      <fieldset class="field">
+        <legend class="label">Memória</legend>
+        <p class="hint">A conversa fica guardada apenas neste aparelho.</p>
+        <button class="btn danger" type="button" id="btn-forget">Esquecer conversa</button>
+      </fieldset>
+
+      <footer class="sheet-foot">Horácio · HoV 0.1</footer>
+    </form>
+  </dialog>
+
+  <script src="js/settings.js"></script>
+  <script src="js/time.js"></script>
+  <script src="js/brain.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
