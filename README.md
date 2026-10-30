@@ -5,7 +5,11 @@ Esta é a primeira versão (HoV 0.1): a base visual e a estrutura do site, pensa
 
 ## Como abrir
 
-Não precisa de instalação. Abra o `index.html` no navegador, ou sirva a pasta:
+**No celular:** https://companynathanael.github.io/Hor-cio/
+O site é publicado automaticamente pelo GitHub Pages a cada envio (`.github/workflows/pages.yml`).
+Roteiro de teste: [TESTE-01.md](TESTE-01.md).
+
+**No computador:** não precisa de instalação. Abra o `index.html` no navegador, ou sirva a pasta:
 
 ```bash
 python3 -m http.server 8080
