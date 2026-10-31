@@ -21,6 +21,7 @@ python3 -m http.server 8080
 - **Saudação pelo período do dia:** Bom dia (05h–12h), Boa tarde (12h–18h) e Boa noite (18h–05h), com o nome do usuário.
 - **Orbe central** em forma de mostrador: o arco dourado marca os segundos, o ponto dourado marca a hora e o vermelho marca os minutos. Os anéis aceleram enquanto o Horácio "pensa".
 - **Conversa por texto** com respostas locais sobre o tempo: horas, data, quanto falta para a meia-noite ou para o Ano Novo, e quanto do ano já passou.
+- **Distância até casa e trabalho:** "Horácio, a quantos minutos estou de casa?" usa o GPS do aparelho e calcula a rota de carro, bicicleta ou a pé.
 - **Chama você pelo nome** em todas as respostas. Diga "meu nome é…" ou preencha em Personalização.
 - **Memória:** a conversa e a última visita ficam salvas no aparelho. O Horácio lembra há quanto tempo vocês não conversam.
 - **Controle de voz:** toque no microfone ou no orbe e fale. O Horácio ouve em português, responde falando e, se você quiser, volta a ouvir sozinho.
@@ -60,6 +61,16 @@ Em Personalização → Voz → Motor de voz, escolha **ElevenLabs** e preencha:
 
 A chave fica salva apenas no aparelho (nunca no código nem no GitHub). Cada resposta falada consome créditos da conta; frases repetidas reaproveitam o áudio já gerado. Se o ElevenLabs falhar (chave, créditos, conexão), o Horácio avisa uma vez e fala com a voz do aparelho.
 
+### Lugares
+
+Em Personalização → Lugares, defina **Casa** e **Trabalho** digitando o endereço ou tocando em "Estou aqui agora". Depois pergunte:
+"a quantos minutos estou de casa?", "quanto tempo até o trabalho?", "quão longe estou de casa?".
+
+- A localização atual vem do GPS do aparelho (o navegador pede permissão na primeira vez).
+- Endereços: Nominatim (OpenStreetMap). Rotas: OSRM nos servidores do OpenStreetMap — gratuitos, **sem trânsito em tempo real**.
+- Se a rota falhar, o Horácio dá uma estimativa pela distância em linha reta.
+- Os lugares ficam salvos só no aparelho; para calcular, as coordenadas são enviadas aos serviços do OpenStreetMap.
+
 ### Chamar pelo nome (experimental)
 
 Com a opção ligada e o site aberto, basta dizer **"Horácio, que horas são?"**, ou só **"Horácio"** e depois o pedido.
@@ -87,7 +98,9 @@ css/style.css         estilos, eras e animações
 js/settings.js        preferências (localStorage)
 js/time.js            utilitários de tempo e períodos do dia
 js/brain.js           respostas do Horácio; aqui entrará a IA
-js/voice.js           ouvir e falar (Web Speech API)
+js/voice.js           ouvir e falar (Web Speech API e ElevenLabs)
+js/places.js          localização, endereços e rotas (OpenStreetMap)
+assets/logo.svg       logo do Horácio (vetor; assume a cor do tema)
 js/app.js             interface: orbe, relógio, conversa e personalização
 manifest.webmanifest  permite instalar o site na tela inicial
 ```

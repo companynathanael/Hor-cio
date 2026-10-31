@@ -14,6 +14,23 @@
     meianoite: "#110C09",
   };
 
+  // Cor da logo no ícone da aba, por era
+  const LOGO_COLOR = {
+    aurora: "#A87B2F",
+    tarde: "#9A6E25",
+    crepusculo: "#D4A64F",
+    meianoite: "#C9A04A",
+  };
+
+  function faviconFor(era) {
+    const logo = document.querySelector("#logo g").innerHTML;
+    const svg =
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">` +
+      `<rect width="512" height="512" rx="112" fill="${THEME_COLOR[era]}"/>` +
+      `<g transform="translate(256 256) scale(0.72)" fill="${LOGO_COLOR[era]}" fill-rule="evenodd">${logo}</g></svg>`;
+    return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+  }
+
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const el = {
@@ -38,6 +55,7 @@
     sheet: $("#settings"),
     form: $("#settings-form"),
     themeMeta: document.querySelector('meta[name="theme-color"]'),
+    favicon: $("#favicon"),
   };
 
   let settings = H.settings.load();
@@ -121,6 +139,7 @@
     lastEraKey = era;
     document.documentElement.dataset.era = era;
     el.themeMeta.setAttribute("content", THEME_COLOR[era]);
+    el.favicon.href = faviconFor(era);
   }
 
   function renderTime(now) {
@@ -457,6 +476,9 @@
     f.querySelector("#opt-el-model").value = settings.elModel;
     el.voiceField.dataset.engine = settings.engine;
     $("#voice-status").textContent = "";
+    f.querySelector(`input[name="travel"][value="${settings.travel}"]`).checked = true;
+    $("#places-status").textContent = "";
+    renderPlaces();
     fillVoiceSelect();
   }
 
@@ -503,6 +525,7 @@
         update({ engine: t.value });
         el.voiceField.dataset.engine = t.value;
       }
+      else if (t.name === "travel") update({ travel: t.value });
       else if (t.id === "opt-el-voice") update({ elVoiceId: t.value.trim() });
       else if (t.id === "opt-el-key") update({ elKey: t.value.trim() });
       else if (t.id === "opt-el-model") update({ elModel: t.value.trim() || H.settings.defaults.elModel });
@@ -532,9 +555,82 @@
       }));
     });
 
+    bindPlaces();
+
     $("#btn-forget").addEventListener("click", () => {
       forget();
       el.sheet.close();
+    });
+  }
+
+  /* ---------- Lugares ---------- */
+
+  const PLACE_ERRORS = {
+    denied: "Sem permissão para ver sua localização. Libere o acesso nas configurações do navegador.",
+    unsupported: "Este aparelho não oferece localização.",
+    timeout: "A localização demorou demais. Tente de novo com o GPS ligado.",
+    unavailable: "Não consegui descobrir sua localização agora.",
+    notfound: "Não encontrei esse endereço. Tente incluir número, bairro e cidade.",
+    network: "Sem conexão para buscar o endereço.",
+    service: "O serviço de mapas não respondeu. Tente de novo em instantes.",
+  };
+
+  function renderPlaces() {
+    document.querySelectorAll(".place").forEach((box) => {
+      const p = settings.places[box.dataset.place];
+      box.classList.toggle("is-set", Boolean(p));
+      box.querySelector('[data-role="label"]').textContent = p ? p.label || "Localização salva" : "Não definido";
+      box.querySelector('[data-role="address"]').value = "";
+    });
+  }
+
+  function savePlace(key, place) {
+    update({ places: { ...settings.places, [key]: place } });
+    renderPlaces();
+  }
+
+  async function placeAction(box, action) {
+    const key = box.dataset.place;
+    const status = $("#places-status");
+    const [name, saved, removed] = key === "casa" ? ["Casa", "salva", "removida"] : ["Trabalho", "salvo", "removido"];
+    try {
+      if (action === "clear") {
+        savePlace(key, null);
+        status.textContent = `${name} ${removed}.`;
+      } else if (action === "here") {
+        status.textContent = "Pegando sua localização…";
+        const pos = await H.places.here();
+        const label = await H.places.reverse(pos);
+        savePlace(key, { lat: pos.lat, lon: pos.lon, label });
+        status.textContent = `✓ ${name} ${saved} na sua localização atual.`;
+      } else if (action === "search") {
+        const address = box.querySelector('[data-role="address"]').value.trim();
+        if (!address) {
+          status.textContent = "Digite o endereço primeiro.";
+          return;
+        }
+        status.textContent = "Buscando o endereço…";
+        savePlace(key, await H.places.geocode(address));
+        status.textContent = `✓ ${name} ${saved}.`;
+      }
+    } catch (e) {
+      status.textContent = PLACE_ERRORS[e.code] || PLACE_ERRORS.service;
+    }
+  }
+
+  function bindPlaces() {
+    document.querySelectorAll(".place").forEach((box) => {
+      box.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-action]");
+        if (btn) placeAction(box, btn.dataset.action);
+      });
+      // Enter no endereço busca, em vez de fechar o painel
+      box.querySelector('[data-role="address"]').addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          placeAction(box, "search");
+        }
+      });
     });
   }
 

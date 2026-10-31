@@ -17,6 +17,8 @@
     elVoiceId: "",
     elKey: "",                        // fica apenas neste aparelho
     elModel: "eleven_multilingual_v2",
+    places: { casa: null, trabalho: null }, // { lat, lon, label }
+    travel: "carro",    // carro | bicicleta | ape
   };
 
   const RHYTHM = { calmo: 1.6, sereno: 1, vivo: 0.6 };
@@ -36,6 +38,7 @@
       s.tone = "profundo";
     }
     if (!TONES.includes(s.tone)) s.tone = defaults.tone;
+    s.places = { ...defaults.places, ...(s.places || {}) };
     return s;
   }
 

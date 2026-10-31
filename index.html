@@ -6,7 +6,8 @@
   <meta name="theme-color" content="#241812">
   <meta name="description" content="Horácio — assistente pessoal, guardião do seu tempo.">
   <title>Horácio</title>
-  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml" id="favicon">
+  <link rel="apple-touch-icon" href="assets/icon-180.png">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,10 +15,16 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="logo" viewBox="-230 -215 460 430">
+      <g fill-rule="evenodd"><path d="M-78 -205L-217 -125V125L-78 205V60L-20 0L-78 -60ZM-123 -123L-170 -96V96L-123 123V48L-77 0L-123 -48Z"/><path d="M78 -205L217 -125V125L78 205V60L20 0L78 -60ZM123 -123L170 -96V96L123 123V48L77 0L123 -48Z"/><path d="M-50 -75H50L0 0ZM-50 75H50L0 0Z"/></g>
+    </symbol>
+  </svg>
   <div class="app" id="app">
 
     <header class="topbar">
       <div class="brand">
+        <svg class="brand-logo" aria-hidden="true"><use href="#logo"/></svg>
         <span class="brand-name">Horácio</span>
         <span class="brand-ver">HoV 0.1</span>
       </div>
@@ -48,7 +55,7 @@
             <g class="ring-think"><circle cx="100" cy="100" r="52"/></g>
             <g class="ring-listen"><circle cx="100" cy="100" r="44"/><circle cx="100" cy="100" r="44"/></g>
             <circle class="core" cx="100" cy="100" r="38"/>
-            <text class="mono" x="100" y="102">H</text>
+            <use class="mono" href="#logo" x="76" y="77.5" width="48" height="45"/>
           </svg>
         </div>
 
@@ -189,6 +196,50 @@
         <p class="hint voice-tip" id="voice-status" role="status"></p>
       </fieldset>
 
+      <fieldset class="field" id="places-field">
+        <legend class="label">Lugares</legend>
+        <p class="hint">Pergunte “Horácio, a quantos minutos estou de casa?”. Os lugares ficam salvos só neste aparelho.</p>
+        <div class="place" data-place="casa">
+          <div class="place-head">
+            <span class="place-name">Casa</span>
+            <span class="place-label" data-role="label">Não definido</span>
+          </div>
+          <div class="place-search">
+            <input class="text-input" type="text" data-role="address" placeholder="Digite o endereço" autocomplete="street-address" enterkeyhint="search">
+            <button class="icon-btn" type="button" data-action="search" aria-label="Buscar endereço de casa">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg>
+            </button>
+          </div>
+          <div class="place-actions">
+            <button class="btn small" type="button" data-action="here">Estou aqui agora</button>
+            <button class="btn small ghost" type="button" data-action="clear">Remover</button>
+          </div>
+        </div>
+        <div class="place" data-place="trabalho">
+          <div class="place-head">
+            <span class="place-name">Trabalho</span>
+            <span class="place-label" data-role="label">Não definido</span>
+          </div>
+          <div class="place-search">
+            <input class="text-input" type="text" data-role="address" placeholder="Digite o endereço" autocomplete="street-address" enterkeyhint="search">
+            <button class="icon-btn" type="button" data-action="search" aria-label="Buscar endereço de trabalho">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg>
+            </button>
+          </div>
+          <div class="place-actions">
+            <button class="btn small" type="button" data-action="here">Estou aqui agora</button>
+            <button class="btn small ghost" type="button" data-action="clear">Remover</button>
+          </div>
+        </div>
+        <p class="sublabel">Como você se desloca</p>
+        <div class="segmented">
+          <label><input type="radio" name="travel" value="carro"><span>Carro</span></label>
+          <label><input type="radio" name="travel" value="bicicleta"><span>Bicicleta</span></label>
+          <label><input type="radio" name="travel" value="ape"><span>A pé</span></label>
+        </div>
+        <p class="hint voice-tip" id="places-status" role="status"></p>
+      </fieldset>
+
       <fieldset class="field">
         <legend class="label">Ritmo</legend>
         <p class="hint">A cadência das animações e das respostas.</p>
@@ -205,13 +256,14 @@
         <button class="btn danger" type="button" id="btn-forget">Esquecer conversa</button>
       </fieldset>
 
-      <footer class="sheet-foot">Horácio · HoV 0.1 · teste-04</footer>
+      <footer class="sheet-foot">Horácio · HoV 0.1 · teste-05</footer>
     </form>
   </dialog>
 
   <script src="js/settings.js"></script>
   <script src="js/time.js"></script>
   <script src="js/brain.js"></script>
+  <script src="js/places.js"></script>
   <script src="js/voice.js"></script>
   <script src="js/app.js"></script>
 </body>

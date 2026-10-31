@@ -1,6 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect width="512" height="512" rx="112" fill="#221710"/>
-  <circle cx="256" cy="256" r="176" fill="none" stroke="#D4A64F" stroke-width="10"/>
-  <circle cx="256" cy="256" r="136" fill="none" stroke="#B8483B" stroke-width="6" stroke-dasharray="120 40 30 40"/>
-  <text x="256" y="262" font-family="Cinzel, 'Times New Roman', serif" font-weight="600" font-size="150" fill="#D4A64F" text-anchor="middle" dominant-baseline="middle">H</text>
+  <g transform="translate(256 256) scale(0.72)" fill="#D4A64F" fill-rule="evenodd">
+    <path d="M-78 -205L-217 -125V125L-78 205V60L-20 0L-78 -60ZM-123 -123L-170 -96V96L-123 123V48L-77 0L-123 -48Z"/>
+    <path d="M78 -205L217 -125V125L78 205V60L20 0L78 -60ZM123 -123L170 -96V96L123 123V48L77 0L123 -48Z"/>
+    <path d="M-50 -75H50L0 0ZM-50 75H50L0 0Z"/>
+  </g>
 </svg>
