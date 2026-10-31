@@ -165,135 +165,75 @@ svg { display: block; }
 
 /* Em conversa: o hero recolhe e dá espaço ao diálogo */
 .app.is-talking .hero { flex: none; padding: 4px 0 8px; }
-.app.is-talking .orb { width: 104px; }
+.app.is-talking .orb { width: 72px; }
 .app.is-talking .greeting { font-size: 1.6rem; margin-top: 10px; }
 .app.is-talking .clock { margin-top: 6px; font-size: .82rem; }
 .app.is-talking .date,
 .app.is-talking .since { display: none; }
 
-/* ---------- Orbe ---------- */
+/* ---------- Orbe: a logo do Horácio ---------- */
 
 .orb {
   position: relative;
-  width: min(66vw, 290px);
-  aspect-ratio: 1;
+  width: min(46vw, 200px);
+  aspect-ratio: 460 / 444;
   transition: width .6s var(--ease);
 }
 
+/* Brilho atrás da logo */
 .orb::before {
   content: "";
   position: absolute;
-  inset: 18%;
+  inset: -22%;
   border-radius: 50%;
-  background: radial-gradient(circle, var(--glow), transparent 70%);
-  filter: blur(18px);
+  background: radial-gradient(circle, var(--glow), transparent 65%);
+  filter: blur(14px);
   animation: breathe calc(5s * var(--rhythm)) ease-in-out infinite;
 }
 
 .orb svg { position: relative; width: 100%; height: 100%; overflow: visible; }
 
-.orb .ticks line { stroke: var(--muted); stroke-width: .8; opacity: .45; stroke-linecap: round; }
-.orb .ticks line.major { stroke: var(--text); stroke-width: 1.3; opacity: .7; }
-
-.orb .track { fill: none; stroke: var(--line); stroke-width: 1; }
-.orb .track.faint { stroke-dasharray: 1 3; }
-
-.orb .sec-arc {
-  fill: none;
-  stroke: var(--gold);
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  transform: rotate(-90deg);
-  transform-origin: 100px 100px;
-}
-
-.orb .ring-dash circle {
-  fill: none;
-  stroke: var(--gold);
-  stroke-width: 1;
-  stroke-dasharray: 1.5 5.5;
-  opacity: .7;
-}
-.orb .ring-dash {
-  transform-origin: 100px 100px;
-  animation: spin calc(90s * var(--rhythm)) linear infinite;
-}
-
-.orb .ring-inner circle {
-  fill: none;
-  stroke: var(--red);
-  stroke-width: 1.4;
-  stroke-dasharray: 46 12 10 12 70 12 10 155;
-  opacity: .8;
-}
-.orb .ring-inner {
-  transform-origin: 100px 100px;
-  animation: spin calc(40s * var(--rhythm)) linear infinite reverse;
-}
-
-.orb .ring-think circle {
-  fill: none;
-  stroke: var(--gold);
-  stroke-width: 3;
-  stroke-linecap: round;
-  stroke-dasharray: 26 301;
-}
-.orb .ring-think {
-  transform-origin: 100px 100px;
-  opacity: 0;
-  transition: opacity .3s ease;
-  animation: spin calc(1.4s * var(--rhythm)) linear infinite;
-}
-
-.orb .dot-hour { fill: var(--gold); }
-.orb .dot-min { fill: var(--red); }
-
-.orb .core {
-  fill: url(#core-grad);
-  stroke: var(--gold);
-  stroke-width: .8;
-  stroke-opacity: .55;
-  transform-origin: 100px 100px;
+.orb .mark {
+  fill: var(--gold);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: fill .4s ease;
   animation: pulse calc(5s * var(--rhythm)) ease-in-out infinite;
 }
 
-.orb .mono { fill: var(--gold); transition: fill .3s ease; }
-
-.orb .ring-listen circle {
-  fill: none;
-  stroke: var(--red);
-  stroke-width: 1.2;
-  opacity: 0;
-  transform-origin: 100px 100px;
+/* A ampulheta vira de tempos em tempos: o Horácio guarda o tempo */
+.orb .hourglass {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: turn calc(14s * var(--rhythm)) var(--ease) infinite;
 }
 
-.orb[data-state="thinking"] .ring-think { opacity: 1; }
-.orb[data-state="thinking"] .core { animation-duration: calc(1.2s * var(--rhythm)); }
+/* Pensando: a ampulheta vira sem parar */
+.orb[data-state="thinking"] .hourglass { animation-duration: calc(1.6s * var(--rhythm)); }
 .orb[data-state="thinking"]::before { animation-duration: calc(1.2s * var(--rhythm)); }
 
-/* Ouvindo: ondas vermelhas saindo do núcleo */
+/* Ouvindo: logo e brilho em vermelho */
+.orb[data-state="listening"] .mark { fill: var(--red); animation-duration: 1.4s; }
 .orb[data-state="listening"]::before {
-  background: radial-gradient(circle, color-mix(in srgb, var(--red) 45%, transparent), transparent 70%);
-  animation-duration: 1.6s;
+  background: radial-gradient(circle, color-mix(in srgb, var(--red) 50%, transparent), transparent 65%);
+  animation-duration: 1.4s;
 }
-.orb[data-state="listening"] .ring-listen circle { animation: ripple 1.8s ease-out infinite; }
-.orb[data-state="listening"] .ring-listen circle + circle { animation-delay: .9s; }
-.orb[data-state="listening"] .core { stroke: var(--red); stroke-opacity: .9; animation-duration: 1.6s; }
-.orb[data-state="listening"] .mono { fill: var(--red); }
 
-/* Falando: o núcleo pulsa como uma voz */
-.orb[data-state="speaking"] .core { animation: talk .5s ease-in-out infinite alternate; }
+/* Falando: a logo pulsa como uma voz */
+.orb[data-state="speaking"] .mark { animation: talk .45s ease-in-out infinite alternate; }
 .orb[data-state="speaking"]::before { animation-duration: 1s; }
 
 .orb.is-interactive { cursor: pointer; -webkit-user-select: none; user-select: none; }
-.orb.is-interactive:focus-visible { outline: none; }
-.orb.is-interactive:focus-visible .core { stroke-width: 2; stroke-opacity: 1; }
+.orb.is-interactive:focus-visible { outline: 2px solid var(--gold); outline-offset: 12px; border-radius: 12px; }
 
-@keyframes ripple { from { opacity: .9; transform: scale(.9); } to { opacity: 0; transform: scale(2.1); } }
-@keyframes talk { from { transform: scale(.97); } to { transform: scale(1.09); } }
-@keyframes spin { to { transform: rotate(360deg); } }
-@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-@keyframes breathe { 0%, 100% { opacity: .65; transform: scale(.94); } 50% { opacity: 1; transform: scale(1.06); } }
+@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+@keyframes talk { from { transform: scale(.97); } to { transform: scale(1.07); } }
+@keyframes breathe { 0%, 100% { opacity: .6; transform: scale(.92); } 50% { opacity: 1; transform: scale(1.06); } }
+@keyframes turn {
+  0%, 42% { transform: rotate(0deg); }
+  50%, 92% { transform: rotate(180deg); }
+  100% { transform: rotate(360deg); }
+}
 
 /* ---------- Conversa ---------- */
 
@@ -482,6 +422,9 @@ select.text-input {
 #voice-field[data-engine="elevenlabs"] .only-browser { display: none; }
 #voice-field .only-eleven .text-input + .sublabel { margin-top: 12px; }
 #voice-status { margin-top: 10px; }
+#ai-field .row { margin-top: 6px; }
+#ai-field .btn { margin-top: 10px; }
+#ai-status { margin-top: 10px; }
 .voice-tip { margin: 8px 0 0; font-size: .78rem; }
 .voice-tip:empty { display: none; }
 
@@ -658,7 +601,7 @@ select.text-input {
 /* ---------- Telas maiores ---------- */
 
 @media (min-width: 720px) {
-  .orb { width: 320px; }
+  .orb { width: 220px; }
   .sheet { margin: auto; border-radius: 26px; }
 }
 

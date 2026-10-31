@@ -20,7 +20,17 @@
   }
 
   // "meu nome é Nathanael", "me chame de Nate"... (no texto original, com acentos)
-  const NAME_PATTERN = /(?:meu nome [ée]|me chame de|me chama de|pode me chamar de|eu sou o|eu sou a)\s+([\p{L}][\p{L}' -]{0,31})/iu;
+  const NAME_PATTERN = /(?:meu nome [ée]|(?:eu )?me chamo|me chame de|me chama de|pode me chamar de|eu sou o|eu sou a)\s+([\p{L}][\p{L}' -]{0,40})/iu;
+
+  /** "nathanael e sou seu criador" → "Nathanael" (até 3 palavras, para antes de conectivos). */
+  function extractName(raw) {
+    const words = [];
+    for (const w of raw.trim().split(/\s+/)) {
+      if (/^(e|sou|que|mas|aqui|o|a|seu|sua|meu|minha|tudo|bem|prazer)$/i.test(w) || words.length === 3) break;
+      words.push(w.replace(/[^\p{L}'-]/gu, ""));
+    }
+    return titleCase(words.filter(Boolean).join(" "));
+  }
 
   let askedName = false;
 
@@ -91,7 +101,7 @@
       reply: ({ now }) => `Hoje é ${T.formatDate(now).toLowerCase()}.`,
     },
     {
-      match: /\b(fim do ano|final do ano|ano novo|reveillon|natal)\b/,
+      match: /\b(fim do ano|final do ano)\b/,
       reply: ({ now }) => {
         const days = T.daysUntilNewYear(now);
         return days === 1
@@ -117,10 +127,12 @@
     {
       match: /\b(ajuda|o que voce faz|o que sabe|comandos|o que voce pode)\b/,
       reply: () =>
-        "Por enquanto, sou especialista em tempo. Experimente:\n" +
+        "Algumas coisas que sei fazer:\n" +
         "· Que horas são?\n· Que dia é hoje?\n· Quanto falta para o fim do ano?\n" +
         "· Quanto falta para a meia-noite?\n· Quanto do ano já passou?\n" +
-        "· A quantos minutos estou de casa?",
+        "· A quantos minutos estou de casa?\n· Me lembra em 10 minutos de tirar o bolo\n" +
+        "· Como está o tempo hoje?\n· Quanto é 15% de 230?\n· Quantos dias faltam para o Natal?\n" +
+        "· Cara ou coroa\nCom a inteligência ativada, converso sobre qualquer assunto.",
     },
     {
       match: /\b(voz|microfone|falar comigo|ouvir)\b/,
@@ -171,20 +183,50 @@
     return `${reply.slice(0, end)}, ${name}${reply.slice(end)}`;
   }
 
-  async function respond(input, { settings, setName }) {
+  const AI_ERRORS = {
+    key: "Minha chave da IA foi recusada. Confira em Personalização → Inteligência.",
+    permission: "Essa chave da IA não tem permissão para esse modelo. Confira em Personalização → Inteligência.",
+    model: "Não encontrei esse modelo de IA. Escolha outro em Personalização → Inteligência.",
+    busy: "A IA está sobrecarregada agora. Tente de novo em alguns segundos.",
+    network: "Não consegui me conectar à IA. Verifique sua internet.",
+    billing: "Os créditos da IA acabaram. Recarregue em console.anthropic.com.",
+    refusal: "Prefiro não responder a isso.",
+    service: "A IA não respondeu como esperado. Tente de novo.",
+  };
+
+  const NO_AI =
+    "Ainda não sei responder a isso sozinho. Para eu conversar sobre qualquer assunto, ative minha inteligência em Personalização → Inteligência. " +
+    "Sem ela, eu cuido de horas, lembretes, previsão do tempo, contas e distância até sua casa.";
+
+  async function respond(input, { settings, setName, memory = [] }) {
     const named = input.match(NAME_PATTERN);
-    if (named && setName) {
-      const name = titleCase(named[1]);
+    const name = named && extractName(named[1]);
+    if (name && setName) {
       setName(name);
-      return `Muito prazer, ${name}. A partir de agora, é assim que vou chamar você.`;
+      const creator = /\bcriador\b/i.test(input) ? " É uma honra conhecer quem me criou. Estou ao seu dispor." : " A partir de agora, é assim que vou chamar você.";
+      return `Muito prazer, ${name}.${creator}`;
     }
 
     const text = normalize(input);
     const now = new Date();
-    const intent = intents.find((i) => i.match.test(text) && (!i.also || i.also.test(text)));
-    const reply = intent
-      ? await intent.reply({ now, settings, text })
-      : "Ainda estou aprendendo. Nesta versão eu entendo de tempo — pergunte as horas, a data ou quanto falta para o fim do ano.";
+    let reply = null;
+    for (const intent of [...intents.slice(0, 1), ...(H.skills?.intents || []), ...intents.slice(1)]) {
+      if (!intent.match.test(text) || (intent.also && !intent.also.test(text))) continue;
+      reply = await intent.reply({ now, settings, text, input });
+      if (reply) break;
+    }
+
+    if (!reply) {
+      if (H.ai?.isReady(settings)) {
+        try {
+          reply = await H.ai.ask(input, { settings, memory });
+        } catch (e) {
+          reply = AI_ERRORS[e.code] || AI_ERRORS.service;
+        }
+      } else {
+        reply = NO_AI;
+      }
+    }
 
     if (!settings.name) {
       if (askedName) return reply;

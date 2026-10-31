@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#241812">
   <meta name="description" content="Horácio — assistente pessoal, guardião do seu tempo.">
   <title>Horácio</title>
-  <link rel="icon" href="assets/icon.svg" type="image/svg+xml" id="favicon">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" id="favicon">
   <link rel="apple-touch-icon" href="assets/icon-180.png">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -36,26 +36,11 @@
     <main class="stage">
       <section class="hero">
         <div class="orb" id="orb" data-state="idle" aria-label="Horácio">
-          <svg viewBox="0 0 200 200" aria-hidden="true">
-            <defs>
-              <radialGradient id="core-grad" cx="50%" cy="42%" r="62%">
-                <stop offset="0%" style="stop-color:var(--gold);stop-opacity:.55"/>
-                <stop offset="65%" style="stop-color:var(--gold);stop-opacity:.12"/>
-                <stop offset="100%" style="stop-color:var(--gold);stop-opacity:0"/>
-              </radialGradient>
-            </defs>
-            <g class="ticks" id="ticks"></g>
-            <circle class="track" cx="100" cy="100" r="84"/>
-            <circle class="sec-arc" id="sec-arc" cx="100" cy="100" r="84"/>
-            <g class="ring-dash"><circle cx="100" cy="100" r="74"/></g>
-            <circle class="track faint" cx="100" cy="100" r="64"/>
-            <circle class="dot-min" id="dot-min" cx="100" cy="36" r="2.2"/>
-            <circle class="dot-hour" id="dot-hour" cx="100" cy="36" r="3.4"/>
-            <g class="ring-inner"><circle cx="100" cy="100" r="52"/></g>
-            <g class="ring-think"><circle cx="100" cy="100" r="52"/></g>
-            <g class="ring-listen"><circle cx="100" cy="100" r="44"/><circle cx="100" cy="100" r="44"/></g>
-            <circle class="core" cx="100" cy="100" r="38"/>
-            <use class="mono" href="#logo" x="76" y="76.8" width="48" height="46.4"/>
+          <svg viewBox="-230 -222 460 444" aria-hidden="true">
+            <g class="mark" fill-rule="evenodd">
+              <g class="half"><path d="M-78 -204L-216 -122L-216 126L-76 208L-76 68L-20 12L-76 -52ZM-122 -122L-122 -56L-76 4L-122 40L-124 126L-170 100L-170 -94Z"/><path d="M80 -208L80 -44L20 12L78 78L78 206L216 126L216 -126ZM124 -126L170 -98L170 98L124 126L122 80L78 22L122 -14Z"/></g>
+              <g class="hourglass"><path d="M-50 -62L0 12L-50 88L52 88L0 14L50 -62Z"/></g>
+            </g>
           </svg>
         </div>
 
@@ -141,6 +126,26 @@
           <span>Mostrar segundos</span>
           <input class="switch" type="checkbox" id="opt-seconds">
         </label>
+      </fieldset>
+
+      <fieldset class="field" id="ai-field">
+        <legend class="label">Inteligência</legend>
+        <p class="hint">Com a IA Claude, o Horácio conversa sobre qualquer assunto e busca informações atuais na web. Sem ela, ele continua cuidando de horas, lembretes, clima, contas e lugares.</p>
+        <label class="sublabel" for="opt-ai-key">Chave de API da Anthropic</label>
+        <input class="text-input" id="opt-ai-key" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="sk-ant-…">
+        <p class="hint voice-tip">Crie em console.anthropic.com → API Keys. A chave fica salva só neste aparelho; cada pergunta à IA consome créditos da sua conta.</p>
+        <label class="sublabel" for="opt-ai-model">Modelo</label>
+        <select class="text-input" id="opt-ai-model">
+          <option value="claude-opus-5-5">Claude Opus 5.5 — o mais inteligente</option>
+          <option value="claude-sonnet-5-5">Claude Sonnet 5.5 — equilíbrio</option>
+          <option value="claude-haiku-5-5">Claude Haiku 5.5 — o mais rápido e barato</option>
+        </select>
+        <label class="row">
+          <span class="row-text">Buscar na web<small>Notícias, resultados, preços e fatos atuais.</small></span>
+          <input class="switch" type="checkbox" id="opt-ai-search">
+        </label>
+        <button class="btn" type="button" id="btn-test-ai">Testar inteligência</button>
+        <p class="hint voice-tip" id="ai-status" role="status"></p>
       </fieldset>
 
       <fieldset class="field" id="voice-field">
@@ -256,7 +261,7 @@
         <button class="btn danger" type="button" id="btn-forget">Esquecer conversa</button>
       </fieldset>
 
-      <footer class="sheet-foot">Horácio · HoV 0.1 · teste-06</footer>
+      <footer class="sheet-foot">Horácio · HoV 0.1 · teste-07</footer>
     </form>
   </dialog>
 
@@ -264,6 +269,8 @@
   <script src="js/time.js"></script>
   <script src="js/brain.js"></script>
   <script src="js/places.js"></script>
+  <script src="js/skills.js"></script>
+  <script src="js/ai.js"></script>
   <script src="js/voice.js"></script>
   <script src="js/app.js"></script>
 </body>

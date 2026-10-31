@@ -19,6 +19,9 @@
     elModel: "eleven_multilingual_v2",
     places: { casa: null, trabalho: null }, // { lat, lon, label }
     travel: "carro",    // carro | bicicleta | ape
+    aiKey: "",          // chave da Anthropic; fica apenas neste aparelho
+    aiModel: "claude-opus-5-5",
+    aiSearch: true,     // a IA pode buscar na web
   };
 
   const RHYTHM = { calmo: 1.6, sereno: 1, vivo: 0.6 };

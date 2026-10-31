@@ -19,8 +19,14 @@ python3 -m http.server 8080
 ## O que já existe
 
 - **Saudação pelo período do dia:** Bom dia (05h–12h), Boa tarde (12h–18h) e Boa noite (18h–05h), com o nome do usuário.
-- **Orbe central** em forma de mostrador: o arco dourado marca os segundos, o ponto dourado marca a hora e o vermelho marca os minutos. Os anéis aceleram enquanto o Horácio "pensa".
+- **Logo central animada:** o H com a ampulheta, na cor da era. A ampulheta vira de tempos em tempos; vira sem parar enquanto o Horácio pensa, fica vermelha quando ele ouve e pulsa quando ele fala.
 - **Conversa por texto** com respostas locais sobre o tempo: horas, data, quanto falta para a meia-noite ou para o Ano Novo, e quanto do ano já passou.
+- **Inteligência (Claude):** com a chave de API da Anthropic, conversa sobre qualquer assunto e busca informações atuais na web.
+- **Lembretes e timers:** "me lembra em 10 minutos de tirar o bolo", "me lembra às 18h de sair", "timer de 5 minutos", "quais são meus lembretes", "cancelar lembretes".
+- **Previsão do tempo:** "como está o tempo?", "vai chover amanhã?" (Open-Meteo, pela sua localização).
+- **Contas:** "quanto é 15% de 230", "12 vezes 8 mais 4", "raiz de 81".
+- **Dias até uma data:** "quantos dias faltam para o Natal / 15 de março".
+- **Cara ou coroa e dados.**
 - **Distância até casa e trabalho:** "Horácio, a quantos minutos estou de casa?" usa o GPS do aparelho e calcula a rota de carro, bicicleta ou a pé.
 - **Chama você pelo nome** em todas as respostas. Diga "meu nome é…" ou preencha em Personalização.
 - **Memória:** a conversa e a última visita ficam salvas no aparelho. O Horácio lembra há quanto tempo vocês não conversam.
@@ -61,6 +67,16 @@ Em Personalização → Voz → Motor de voz, escolha **ElevenLabs** e preencha:
 
 A chave fica salva apenas no aparelho (nunca no código nem no GitHub). Cada resposta falada consome créditos da conta; frases repetidas reaproveitam o áudio já gerado. Se o ElevenLabs falhar (chave, créditos, conexão), o Horácio avisa uma vez e fala com a voz do aparelho.
 
+### Inteligência
+
+Em Personalização → Inteligência, cole a chave de API da Anthropic (console.anthropic.com → API Keys) e escolha o modelo:
+Claude Opus 5.5 (padrão, o mais inteligente), Sonnet 5.5 (equilíbrio) ou Haiku 5.5 (mais rápido e barato).
+
+- As habilidades locais respondem primeiro, de graça; só o que elas não cobrem vai para a IA.
+- A chave fica salva só no aparelho e é enviada direto do navegador para a API da Anthropic.
+- "Buscar na web" deixa a IA consultar notícias e fatos atuais (cobrado à parte pela Anthropic).
+- O SDK oficial (`@anthropic-ai/sdk` 0.133.0, licença MIT) vem empacotado em `js/vendor/`.
+
 ### Lugares
 
 Em Personalização → Lugares, defina **Casa** e **Trabalho** digitando o endereço ou tocando em "Estou aqui agora". Depois pergunte:
@@ -100,6 +116,9 @@ js/time.js            utilitários de tempo e períodos do dia
 js/brain.js           respostas do Horácio; aqui entrará a IA
 js/voice.js           ouvir e falar (Web Speech API e ElevenLabs)
 js/places.js          localização, endereços e rotas (OpenStreetMap)
+js/skills.js          habilidades locais: lembretes, clima, contas, datas, sorte
+js/ai.js              conversa com a IA Claude (chave do próprio dono)
+js/vendor/            SDK oficial da Anthropic empacotado para o navegador
 assets/logo.svg       logo do Horácio (vetor; assume a cor do tema)
 js/app.js             interface: orbe, relógio, conversa e personalização
 manifest.webmanifest  permite instalar o site na tela inicial

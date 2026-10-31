@@ -24,10 +24,10 @@
 
   function faviconFor(era) {
     const logo = document.querySelector("#logo g").innerHTML;
+    // Só o H, sem fundo: a cor acompanha a era
     const svg =
-      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">` +
-      `<rect width="512" height="512" rx="112" fill="${THEME_COLOR[era]}"/>` +
-      `<g transform="translate(256 256) scale(0.7)" fill="${LOGO_COLOR[era]}" fill-rule="evenodd">${logo}</g></svg>`;
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-230 -222 460 444">` +
+      `<g fill="${LOGO_COLOR[era]}" fill-rule="evenodd">${logo}</g></svg>`;
     return `data:image/svg+xml,${encodeURIComponent(svg)}`;
   }
 
@@ -36,10 +36,6 @@
   const el = {
     app: $("#app"),
     orb: $("#orb"),
-    ticks: $("#ticks"),
-    secArc: $("#sec-arc"),
-    dotHour: $("#dot-hour"),
-    dotMin: $("#dot-min"),
     greeting: $("#greeting"),
     clock: $("#clock"),
     date: $("#date"),
@@ -92,42 +88,6 @@
     } catch {}
   }
 
-  /* ---------- Orbe ---------- */
-
-  const C = 100, ARC_R = 84, HAND_R = 64;
-  const ARC_LEN = 2 * Math.PI * ARC_R;
-
-  function buildTicks() {
-    const ns = "http://www.w3.org/2000/svg";
-    for (let i = 0; i < 60; i++) {
-      const major = i % 5 === 0;
-      const a = (i / 60) * Math.PI * 2;
-      const r1 = major ? 89 : 92, r2 = 97;
-      const line = document.createElementNS(ns, "line");
-      line.setAttribute("x1", C + r1 * Math.sin(a));
-      line.setAttribute("y1", C - r1 * Math.cos(a));
-      line.setAttribute("x2", C + r2 * Math.sin(a));
-      line.setAttribute("y2", C - r2 * Math.cos(a));
-      if (major) line.classList.add("major");
-      el.ticks.appendChild(line);
-    }
-    el.secArc.style.strokeDasharray = `${ARC_LEN}`;
-  }
-
-  function placeOnDial(node, fraction, r) {
-    const a = fraction * Math.PI * 2;
-    node.setAttribute("cx", (C + r * Math.sin(a)).toFixed(2));
-    node.setAttribute("cy", (C - r * Math.cos(a)).toFixed(2));
-  }
-
-  function drawDial(now) {
-    const sec = now.getSeconds() + (reducedMotion ? 0 : now.getMilliseconds() / 1000);
-    el.secArc.style.strokeDashoffset = ARC_LEN * (1 - sec / 60);
-    const min = now.getMinutes() + now.getSeconds() / 60;
-    placeOnDial(el.dotMin, min / 60, HAND_R);
-    placeOnDial(el.dotHour, ((now.getHours() % 12) + min / 60) / 12, HAND_R);
-  }
-
   /* ---------- Tempo e era ---------- */
 
   let lastSecond = -1;
@@ -156,17 +116,11 @@
       lastSecond = now.getSeconds();
       renderTime(now);
     }
-    drawDial(now);
   }
 
   function startClock() {
     tick();
-    if (reducedMotion) {
-      setInterval(tick, 1000);
-    } else {
-      const loop = () => { tick(); requestAnimationFrame(loop); };
-      requestAnimationFrame(loop);
-    }
+    setInterval(tick, 250);
   }
 
   function renderSince() {
@@ -279,7 +233,7 @@
   /* ---------- Voz ---------- */
 
   const VOICE_ERRORS = {
-    "not-allowed": "Preciso de permissão para usar o microfone. Libere o acesso nas configurações do navegador.",
+    "not-allowed": "Preciso de permissão para usar o microfone. No computador: clique no ícone ao lado do endereço do site → Microfone → Permitir, e recarregue a página. No celular: toque no ícone ao lado do endereço → Permissões → Microfone.",
     "service-not-allowed": "O navegador bloqueou o reconhecimento de voz nesta página. Abra o Horácio por um endereço https.",
     "audio-capture": "Não encontrei nenhum microfone neste aparelho.",
     network: "Não consegui falar com o serviço de reconhecimento de voz. Verifique sua conexão.",
@@ -288,6 +242,14 @@
   function notify(text) {
     // Aviso do sistema: aparece na conversa, mas não entra na memória.
     addMessage("horacio", text);
+  }
+
+  // Avisos repetidos (ex.: microfone bloqueado) aparecem uma vez por sessão.
+  const notified = new Set();
+  function notifyOnce(key, text) {
+    if (notified.has(key)) return;
+    notified.add(key);
+    notify(text);
   }
 
   const ELEVEN_ERRORS = {
@@ -326,7 +288,7 @@
 
     const text = await H.voice.listen({
       onInterim: (t) => { el.input.value = t; },
-      onError: (code) => notify(VOICE_ERRORS[code] || "Não consegui ouvir agora. Tente novamente."),
+      onError: (code) => notifyOnce(`voice:${code}`, VOICE_ERRORS[code] || "Não consegui ouvir agora. Tente novamente."),
     });
 
     el.mic.classList.remove("is-active");
@@ -479,6 +441,10 @@
     f.querySelector(`input[name="travel"][value="${settings.travel}"]`).checked = true;
     $("#places-status").textContent = "";
     renderPlaces();
+    f.querySelector("#opt-ai-key").value = settings.aiKey;
+    f.querySelector("#opt-ai-model").value = settings.aiModel;
+    f.querySelector("#opt-ai-search").checked = settings.aiSearch;
+    $("#ai-status").textContent = "";
     fillVoiceSelect();
   }
 
@@ -526,6 +492,9 @@
         el.voiceField.dataset.engine = t.value;
       }
       else if (t.name === "travel") update({ travel: t.value });
+      else if (t.id === "opt-ai-key") update({ aiKey: t.value.trim() });
+      else if (t.id === "opt-ai-model") update({ aiModel: t.value });
+      else if (t.id === "opt-ai-search") update({ aiSearch: t.checked });
       else if (t.id === "opt-el-voice") update({ elVoiceId: t.value.trim() });
       else if (t.id === "opt-el-key") update({ elKey: t.value.trim() });
       else if (t.id === "opt-el-model") update({ elModel: t.value.trim() || H.settings.defaults.elModel });
@@ -557,10 +526,77 @@
 
     bindPlaces();
 
+    $("#btn-test-ai").addEventListener("click", async () => {
+      const status = $("#ai-status");
+      if (!settings.aiKey) {
+        status.textContent = "Cole sua chave de API da Anthropic primeiro.";
+        return;
+      }
+      status.textContent = "Perguntando à IA…";
+      try {
+        const reply = await H.ai.ask("Apresente-se em uma frase curta.", { settings, memory: [] });
+        status.textContent = `✓ Funcionando. Resposta: “${reply}”`;
+      } catch (e) {
+        const msg = {
+          key: "A chave foi recusada. Confira se copiou a chave inteira.",
+          permission: "Essa chave não tem acesso a esse modelo.",
+          model: "Modelo não encontrado. Escolha outro.",
+          busy: "A IA está sobrecarregada. Tente de novo em instantes.",
+          network: "Sem conexão com a IA. Verifique sua internet.",
+          billing: "Sua conta está sem créditos. Recarregue em console.anthropic.com.",
+        };
+        status.textContent = msg[e.code] || "A IA não respondeu como esperado. Tente de novo.";
+      }
+    });
+
     $("#btn-forget").addEventListener("click", () => {
       forget();
       el.sheet.close();
     });
+  }
+
+  /* ---------- Lembretes ---------- */
+
+  /** Um "plim" curto, para chamar atenção mesmo com a voz desligada. */
+  function chime() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [880, 1320].forEach((freq, i) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.frequency.value = freq;
+        const t0 = ctx.currentTime + i * 0.18;
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(0.25, t0 + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.5);
+        o.connect(g).connect(ctx.destination);
+        o.start(t0);
+        o.stop(t0 + 0.55);
+      });
+      setTimeout(() => ctx.close(), 1500);
+    } catch {}
+  }
+
+  function onReminder(r, late) {
+    const name = settings.name ? `${settings.name}, ` : "";
+    const what = r.text ? `: ${r.text}` : "";
+    const head = r.kind === "timer" ? "o tempo do timer acabou" : `está na hora${what}`;
+    const text = `${name}${late ? "lembrete atrasado — " : ""}${head}.`;
+    const finalText = text.charAt(0).toUpperCase() + text.slice(1);
+
+    chime();
+    const node = addMessage("horacio", finalText);
+    remember("horacio", finalText, Date.now());
+    if (H.voice.canSpeak && settings.speak !== "nunca") {
+      H.voice.speak(finalText, speakOptions({ onStart: () => setState("speaking") })).then(() => {
+        if (el.orb.dataset.state === "speaking") setState("idle");
+      });
+    }
+    // Notificação do sistema, se o site estiver em segundo plano e houver permissão
+    if (document.visibilityState === "hidden" && "Notification" in window && Notification.permission === "granted") {
+      try { new Notification("Horácio", { body: finalText, icon: "assets/icon-192.png" }); } catch {}
+    }
+    return node;
   }
 
   /* ---------- Lugares ---------- */
@@ -638,12 +674,12 @@
 
   function init() {
     applyRhythm();
-    buildTicks();
     startClock();
     renderSince();
     restoreMemory();
     bindSettings();
     setupVoice();
+    H.skills.startReminders(onReminder);
 
     el.composer.addEventListener("submit", (e) => {
       e.preventDefault();
