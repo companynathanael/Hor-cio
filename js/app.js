@@ -27,7 +27,7 @@
     const svg =
       `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">` +
       `<rect width="512" height="512" rx="112" fill="${THEME_COLOR[era]}"/>` +
-      `<g transform="translate(256 256) scale(0.72)" fill="${LOGO_COLOR[era]}" fill-rule="evenodd">${logo}</g></svg>`;
+      `<g transform="translate(256 256) scale(0.7)" fill="${LOGO_COLOR[era]}" fill-rule="evenodd">${logo}</g></svg>`;
     return `data:image/svg+xml,${encodeURIComponent(svg)}`;
   }
 
