@@ -206,7 +206,7 @@
       }
       const credit = document.createElement("small");
       credit.className = "msg-credit";
-      credit.textContent = "Imagens: Wikimedia Commons";
+      credit.textContent = images.some((im) => im.url.includes("wikipedia.org")) ? "Imagem: Wikipédia" : "Imagens: Wikimedia Commons";
       item.append(grid, credit);
     }
     if (sources.length) {
@@ -219,7 +219,7 @@
         a.rel = "noopener";
         let host = "";
         try { host = new URL(src.url).hostname.replace(/^www\./, ""); } catch {}
-        a.textContent = host || src.title;
+        a.textContent = /wikipedia\.org$/.test(host) ? "Wikipédia" : host || src.title;
         a.title = src.title;
         list.append(a);
       }

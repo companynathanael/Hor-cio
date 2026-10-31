@@ -28,6 +28,7 @@ python3 -m http.server 8080
 - **Contas:** "quanto é 15% de 230", "12 vezes 8 mais 4", "raiz de 81".
 - **Dias até uma data:** "quantos dias faltam para o Natal / 15 de março".
 - **Cara ou coroa e dados.**
+- **Conhecimento geral sem chave:** "o que é um buraco negro?", "qual a capital da França?", "quem foi Santos Dumont?" — resumo do verbete da Wikipédia em português, com a fonte e a imagem do artigo.
 - **Distância até casa e trabalho:** "Horácio, a quantos minutos estou de casa?" usa o GPS do aparelho e calcula a rota de carro, bicicleta ou a pé.
 - **Chama você pelo nome** em todas as respostas. Diga "meu nome é…" ou preencha em Personalização.
 - **Memória:** a conversa e a última visita ficam salvas no aparelho. O Horácio lembra há quanto tempo vocês não conversam.
@@ -122,6 +123,7 @@ js/voice.js           ouvir e falar (Web Speech API e ElevenLabs)
 js/places.js          localização, endereços e rotas (OpenStreetMap)
 js/skills.js          habilidades locais: lembretes, clima, contas, datas, sorte
 js/goals.js           metas de longo prazo: plano e projeção
+js/knowledge.js       conhecimento geral pela Wikipédia (sem chave de IA)
 js/ai.js              conversa com a IA Claude (chave do próprio dono)
 js/vendor/            SDK oficial da Anthropic empacotado para o navegador
 assets/logo.svg       logo do Horácio (vetor; assume a cor do tema)

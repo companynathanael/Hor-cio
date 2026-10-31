@@ -195,8 +195,19 @@
   };
 
   const NO_AI =
-    "Ainda não sei responder a isso sozinho. Para eu conversar sobre qualquer assunto, ative minha inteligência em Personalização → Inteligência. " +
-    "Sem ela, eu cuido de horas, lembretes, previsão do tempo, contas e distância até sua casa.";
+    "Não encontrei uma resposta para isso. Para eu conversar sobre qualquer assunto, ative minha inteligência em Personalização → Inteligência. " +
+    "Sem ela, eu cuido de horas, lembretes, clima, contas, metas e perguntas de conhecimento geral.";
+  const NO_ANSWER = "Não encontrei uma resposta para isso. Tente perguntar de outro jeito, por exemplo “o que é…” ou “quem foi…”.";
+  let hintedAI = false;
+
+  /** Sem IA: tenta a Wikipédia; o convite para ativar a IA aparece uma vez por sessão. */
+  async function withoutAI(input) {
+    const found = await H.knowledge?.lookup(input).catch(() => null);
+    if (found) return found;
+    if (hintedAI) return { text: NO_ANSWER };
+    hintedAI = true;
+    return { text: NO_AI };
+  }
 
   /**
    * Responde ao dono. Resolve com { text, sources?, images?, goalsChanged? }.
@@ -231,10 +242,16 @@
         try {
           reply = await H.ai.ask(input, { settings, memory, image });
         } catch (e) {
-          reply = { text: AI_ERRORS[e.code] || AI_ERRORS.service };
+          // Se a IA falhar (rede, créditos...), a Wikipédia ainda pode responder.
+          const backup = !image && e.code !== "refusal" ? await H.knowledge?.lookup(input).catch(() => null) : null;
+          reply = backup
+            ? { ...backup, text: `${AI_ERRORS[e.code] || AI_ERRORS.service} Enquanto isso: ${backup.text}` }
+            : { text: AI_ERRORS[e.code] || AI_ERRORS.service };
         }
+      } else if (image) {
+        reply = { text: "Para eu ver imagens, ative minha inteligência em Personalização → Inteligência." };
       } else {
-        reply = { text: image ? "Para eu ver imagens, ative minha inteligência em Personalização → Inteligência." : NO_AI };
+        reply = await withoutAI(input);
       }
     }
 
