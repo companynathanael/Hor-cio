@@ -1,6 +1,8 @@
 /* Orquestra a interface do Horácio. */
 (function (H) {
   const $ = (sel) => document.querySelector(sel);
+  // Liga um evento só se o elemento existir (protege contra página e scripts de versões diferentes).
+  const on = (sel, type, fn) => document.querySelector(sel)?.addEventListener(type, fn);
   const T = H.time;
 
   const MEMORY_KEY = "horacio.memory.v1";
@@ -519,8 +521,8 @@
   }
 
   function bindSettings() {
-    $("#btn-settings").addEventListener("click", () => {
-      fillSettingsForm();
+    on("#btn-settings", "click", () => {
+      safe(fillSettingsForm);
       el.sheet.showModal();
     });
 
@@ -560,7 +562,7 @@
       if (t.id?.startsWith("opt-el-") || t.name === "engine") elevenWarned.clear();
     });
 
-    $("#btn-test-voice").addEventListener("click", () => {
+    on("#btn-test-voice", "click", () => {
       H.voice.unlock();
       const status = $("#voice-status");
       const usingEleven = settings.engine === "elevenlabs";
@@ -585,7 +587,7 @@
 
     bindPlaces();
 
-    $("#btn-test-ai").addEventListener("click", async () => {
+    on("#btn-test-ai", "click", async () => {
       const status = $("#ai-status");
       if (!settings.aiKey) {
         status.textContent = "Cole sua chave de API da Anthropic primeiro.";
@@ -610,12 +612,12 @@
 
     bindGoals();
 
-    $("#btn-forget-notes").addEventListener("click", () => {
+    on("#btn-forget-notes", "click", () => {
       H.ai.clearNotes();
       $("#notes-status").textContent = "✓ Esqueci o que tinha anotado sobre você.";
     });
 
-    $("#btn-forget").addEventListener("click", () => {
+    on("#btn-forget", "click", () => {
       forget();
       el.sheet.close();
     });
@@ -646,13 +648,15 @@
 
   function clearPhoto() {
     pendingPhoto = null;
-    $("#photo-chip").hidden = true;
-    $("#photo-input").value = "";
+    const chip = $("#photo-chip");
+    const input = $("#photo-input");
+    if (chip) chip.hidden = true;
+    if (input) input.value = "";
   }
 
   function bindPhoto() {
     const input = $("#photo-input");
-    $("#btn-photo").addEventListener("click", () => input.click());
+    on("#btn-photo", "click", () => input.click());
     input.addEventListener("change", async () => {
       const file = input.files?.[0];
       if (!file) return;
@@ -665,7 +669,7 @@
         clearPhoto();
       }
     });
-    $("#photo-remove").addEventListener("click", clearPhoto);
+    on("#photo-remove", "click", clearPhoto);
   }
 
   /* ---------- Metas ---------- */
@@ -734,7 +738,7 @@
   }
 
   function bindGoals() {
-    $("#btn-goal-add").addEventListener("click", () => {
+    on("#btn-goal-add", "click", () => {
       const f = el.form;
       const name = f.querySelector("#goal-name").value.trim();
       const target = parseFloat(f.querySelector("#goal-target").value.replace(/\./g, "").replace(",", "."));
@@ -874,15 +878,25 @@
 
   /* ---------- Início ---------- */
 
-  function init() {
-    applyRhythm();
-    startClock();
-    renderSince();
-    restoreMemory();
-    bindSettings();
-    setupVoice();
-    H.skills.startReminders(onReminder);
+  /** Roda uma etapa da inicialização sem deixar uma falha derrubar as outras. */
+  function safe(step) {
+    try {
+      step();
+    } catch (err) {
+      reportError(err);
+    }
+  }
 
+  function reportError(err) {
+    console.error(err);
+    notifyOnce(
+      `erro:${err?.message}`,
+      `Algo deu errado aqui dentro (${err?.message || "erro desconhecido"}). Se algo não funcionar, recarregue a página.`
+    );
+  }
+
+  function init() {
+    // O envio de mensagens vem primeiro: é o que não pode faltar.
     el.composer.addEventListener("submit", (e) => {
       e.preventDefault();
       if (H.voice.isListening()) { H.voice.stopListening(); return; }
@@ -891,10 +905,25 @@
       if (!text || busy) return;
       H.voice.unlock();
       el.input.value = "";
-      clearPhoto();
-      send(text, { image });
+      safe(clearPhoto);
+      send(text, { image }).catch((err) => {
+        busy = false;
+        setState("idle");
+        reportError(err);
+      });
     });
-    bindPhoto();
+
+    safe(applyRhythm);
+    safe(startClock);
+    safe(renderSince);
+    safe(restoreMemory);
+    safe(bindSettings);
+    safe(setupVoice);
+    safe(() => H.skills.startReminders(onReminder));
+    safe(bindPhoto);
+
+    window.addEventListener("error", (e) => reportError(e.error || e));
+    window.addEventListener("unhandledrejection", (e) => reportError(e.reason));
 
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "hidden") markSeen();
