@@ -21,7 +21,8 @@ python3 -m http.server 8080
 - **Saudação pelo período do dia:** Bom dia (05h–12h), Boa tarde (12h–18h) e Boa noite (18h–05h), com o nome do usuário.
 - **Logo central animada:** o H com a ampulheta, na cor da era. A ampulheta vira de tempos em tempos; vira sem parar enquanto o Horácio pensa, fica vermelha quando ele ouve e pulsa quando ele fala.
 - **Conversa por texto** com respostas locais sobre o tempo: horas, data, quanto falta para a meia-noite ou para o Ano Novo, e quanto do ano já passou.
-- **Inteligência (Claude):** com a chave de API da Anthropic, conversa sobre qualquer assunto e busca informações atuais na web.
+- **Inteligência (Claude):** com a chave de API da Anthropic, conversa sobre qualquer assunto, pesquisa e lê páginas na web (mostrando as fontes), mostra imagens de referência (Wikimedia Commons), analisa fotos que você envia e guarda o que aprende sobre você.
+- **Metas de longo prazo:** "quero juntar 10 mil reais até dezembro de 2027 para a viagem", "guardei 500 reais para a viagem", "como estão minhas metas?" — calcula o ritmo por mês/semana/dia e projeta quando você chega lá.
 - **Lembretes e timers:** "me lembra em 10 minutos de tirar o bolo", "me lembra às 18h de sair", "timer de 5 minutos", "quais são meus lembretes", "cancelar lembretes".
 - **Previsão do tempo:** "como está o tempo?", "vai chover amanhã?" (Open-Meteo, pela sua localização).
 - **Contas:** "quanto é 15% de 230", "12 vezes 8 mais 4", "raiz de 81".
@@ -56,6 +57,7 @@ Usa a Web Speech API do próprio navegador, sem servidor.
   - **iPhone:** Ajustes → Acessibilidade → Conteúdo Falado → Vozes → Português (Brasil) → baixe "Felipe (Melhorada)".
   - **Android:** Configurações → Saída de conversão de texto em voz → Mecanismo do Google → Português (Brasil) → voz masculina.
   - **Computador:** no Microsoft Edge, a voz "Antonio Online (Natural)" é a mais humana.
+- Com a voz do ElevenLabs, o **Efeito na voz** dá um timbre sintético de assistente de IA: Natural, Assistente (padrão) ou Robô.
 
 ### Voz do ElevenLabs
 
@@ -74,7 +76,9 @@ Claude Opus 5.5 (padrão, o mais inteligente), Sonnet 5.5 (equilíbrio) ou Haiku
 
 - As habilidades locais respondem primeiro, de graça; só o que elas não cobrem vai para a IA.
 - A chave fica salva só no aparelho e é enviada direto do navegador para a API da Anthropic.
-- "Buscar na web" deixa a IA consultar notícias e fatos atuais (cobrado à parte pela Anthropic).
+- "Buscar na web" deixa a IA pesquisar e ler páginas (cobrado à parte pela Anthropic); as fontes aparecem abaixo da resposta.
+- Ferramentas no aparelho: imagens de referência (Wikimedia Commons), metas (criar, atualizar, ver, remover) e anotações sobre o dono.
+- Fotos: toque no ícone da câmera ao lado do microfone para o Horácio ver uma imagem.
 - O SDK oficial (`@anthropic-ai/sdk` 0.133.0, licença MIT) vem empacotado em `js/vendor/`.
 
 ### Lugares
@@ -93,7 +97,7 @@ Com a opção ligada e o site aberto, basta dizer **"Horácio, que horas são?"*
 
 - O navegador só libera o microfone depois de um toque, então ao abrir o site é preciso tocar uma vez na tela. O microfone fica com um ponto vermelho piscando quando está de prontidão.
 - Funciona apenas com o site aberto e a tela ligada; em segundo plano o navegador desliga o microfone.
-- No Android, o Chrome pode emitir um bipe cada vez que reinicia a escuta.
+- No Android, o sistema toca um bipe toda vez que o reconhecimento de voz liga. Para não bipar sem parar, lá o Horácio mede só o volume do microfone (sem bipe) e liga o reconhecimento apenas quando alguém fala. Dica: diga "Horácio" e o pedido numa frase só.
 
 ## Paletas
 
@@ -117,6 +121,7 @@ js/brain.js           respostas do Horácio; aqui entrará a IA
 js/voice.js           ouvir e falar (Web Speech API e ElevenLabs)
 js/places.js          localização, endereços e rotas (OpenStreetMap)
 js/skills.js          habilidades locais: lembretes, clima, contas, datas, sorte
+js/goals.js           metas de longo prazo: plano e projeção
 js/ai.js              conversa com a IA Claude (chave do próprio dono)
 js/vendor/            SDK oficial da Anthropic empacotado para o navegador
 assets/logo.svg       logo do Horácio (vetor; assume a cor do tema)

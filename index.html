@@ -53,7 +53,18 @@
       <section class="log" id="log" aria-live="polite" aria-label="Conversa"></section>
     </main>
 
+    <div class="photo-chip" id="photo-chip" hidden>
+      <img alt="Foto anexada">
+      <span>Foto anexada</span>
+      <button class="icon-btn ghost" type="button" id="photo-remove" aria-label="Remover foto">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
     <form class="composer" id="composer" autocomplete="off">
+      <input type="file" id="photo-input" accept="image/*" hidden>
+      <button class="icon-btn ghost" type="button" id="btn-photo" aria-label="Enviar foto para o Horácio">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="14" rx="3"/><circle cx="12" cy="13" r="3.5"/><path d="M8.5 6l1.5-2h4l1.5 2"/></svg>
+      </button>
       <button class="icon-btn ghost mic" id="btn-mic" type="button" disabled aria-label="Falar com o Horácio" aria-pressed="false">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
       </button>
@@ -188,6 +199,12 @@
             <option value="eleven_flash_v2_5">
           </datalist>
           <p class="hint voice-tip">A chave fica salva só neste aparelho. Cada resposta falada consome créditos da sua conta; frases repetidas reaproveitam o áudio.</p>
+          <p class="sublabel">Efeito na voz</p>
+          <div class="segmented">
+            <label><input type="radio" name="voicefx" value="natural"><span>Natural</span></label>
+            <label><input type="radio" name="voicefx" value="assistente"><span>Assistente</span></label>
+            <label><input type="radio" name="voicefx" value="robo"><span>Robô</span></label>
+          </div>
         </div>
         <label class="row">
           <span class="row-text">Chamar pelo nome<small>Diga “Horácio, que horas são?” sem tocar em nada. Experimental.</small></span>
@@ -199,6 +216,25 @@
         </label>
         <button class="btn" type="button" id="btn-test-voice">Ouvir o Horácio</button>
         <p class="hint voice-tip" id="voice-status" role="status"></p>
+      </fieldset>
+
+      <fieldset class="field" id="goals-field">
+        <legend class="label">Metas</legend>
+        <p class="hint">O Horácio calcula o ritmo para chegar lá e projeta quando você alcança cada meta. Também dá para criar por voz: “quero juntar 10 mil reais até dezembro de 2027 para a viagem”.</p>
+        <div id="goals-list"></div>
+        <div class="goal-form">
+          <input class="text-input" id="goal-name" type="text" placeholder="Nome (ex.: viagem)">
+          <div class="goal-row">
+            <input class="text-input" id="goal-target" type="text" inputmode="decimal" placeholder="Alvo (ex.: 10000)">
+            <input class="text-input" id="goal-unit" type="text" placeholder="Unidade (reais, km…)">
+          </div>
+          <div class="goal-row">
+            <input class="text-input" id="goal-current" type="text" inputmode="decimal" placeholder="Já tenho (ex.: 1500)">
+            <input class="text-input" id="goal-deadline" type="date" aria-label="Prazo">
+          </div>
+          <button class="btn" type="button" id="btn-goal-add">Criar meta</button>
+          <p class="hint voice-tip" id="goals-status" role="status"></p>
+        </div>
       </fieldset>
 
       <fieldset class="field" id="places-field">
@@ -258,10 +294,14 @@
       <fieldset class="field">
         <legend class="label">Memória</legend>
         <p class="hint">A conversa fica guardada apenas neste aparelho.</p>
-        <button class="btn danger" type="button" id="btn-forget">Esquecer conversa</button>
+        <div class="place-actions">
+          <button class="btn danger" type="button" id="btn-forget">Esquecer conversa</button>
+          <button class="btn" type="button" id="btn-forget-notes">Esquecer o que sabe de mim</button>
+        </div>
+        <p class="hint voice-tip" id="notes-status" role="status"></p>
       </fieldset>
 
-      <footer class="sheet-foot">Horácio · HoV 0.1 · teste-07</footer>
+      <footer class="sheet-foot">Horácio · HoV 0.1 · teste-08</footer>
     </form>
   </dialog>
 
@@ -270,6 +310,7 @@
   <script src="js/brain.js"></script>
   <script src="js/places.js"></script>
   <script src="js/skills.js"></script>
+  <script src="js/goals.js"></script>
   <script src="js/ai.js"></script>
   <script src="js/voice.js"></script>
   <script src="js/app.js"></script>

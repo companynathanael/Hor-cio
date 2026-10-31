@@ -139,7 +139,7 @@
     return new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit", hour12: !settings.hour24 }).format(t);
   }
 
-  function addMessage(role, text, t = Date.now()) {
+  function addMessage(role, text, t = Date.now(), extras = null) {
     const item = document.createElement("article");
     item.className = `msg ${role}`;
     const time = document.createElement("time");
@@ -147,7 +147,16 @@
     time.textContent = role === "horacio" ? `Horácio · ${stamp(t)}` : stamp(t);
     const p = document.createElement("p");
     p.textContent = text;
-    item.append(time, p);
+    item.append(time);
+    if (extras?.photo) {
+      const img = document.createElement("img");
+      img.className = "msg-photo";
+      img.src = extras.photo;
+      img.alt = "Foto enviada";
+      item.append(img);
+    }
+    item.append(p);
+    if (extras) renderExtras(item, extras);
     el.log.appendChild(item);
     el.app.classList.add("is-talking");
     scrollToEnd();
@@ -175,8 +184,49 @@
     });
   }
 
-  function remember(role, text, t) {
-    memory.push({ role, text, t });
+  /** Imagens de referência e fontes consultadas, abaixo da resposta. */
+  function renderExtras(item, { images = [], sources = [] }) {
+    if (images.length) {
+      const grid = document.createElement("div");
+      grid.className = "msg-images";
+      for (const im of images) {
+        const a = document.createElement("a");
+        a.href = im.url;
+        a.target = "_blank";
+        a.rel = "noopener";
+        a.title = im.title;
+        const img = document.createElement("img");
+        img.src = im.thumb;
+        img.alt = im.title;
+        img.loading = "lazy";
+        a.append(img);
+        grid.append(a);
+      }
+      const credit = document.createElement("small");
+      credit.className = "msg-credit";
+      credit.textContent = "Imagens: Wikimedia Commons";
+      item.append(grid, credit);
+    }
+    if (sources.length) {
+      const list = document.createElement("div");
+      list.className = "msg-sources";
+      for (const src of sources) {
+        const a = document.createElement("a");
+        a.href = src.url;
+        a.target = "_blank";
+        a.rel = "noopener";
+        let host = "";
+        try { host = new URL(src.url).hostname.replace(/^www\./, ""); } catch {}
+        a.textContent = host || src.title;
+        a.title = src.title;
+        list.append(a);
+      }
+      item.append(list);
+    }
+  }
+
+  function remember(role, text, t, extras = null) {
+    memory.push(extras ? { role, text, t, extras } : { role, text, t });
     memory = memory.slice(-MEMORY_LIMIT);
     saveMemory();
   }
@@ -192,30 +242,34 @@
     return settings.speak === "sempre" || (settings.speak === "voz" && viaVoice);
   }
 
-  async function send(text, { viaVoice = false } = {}) {
+  async function send(text, { viaVoice = false, image = null } = {}) {
     if (busy) return;
     busy = true;
     H.voice.stopSpeaking();
     const t = Date.now();
-    addMessage("user", text, t);
-    remember("user", text, t);
+    addMessage("user", text, t, image ? { photo: image.preview } : null);
+    remember("user", image ? `${text} [foto enviada]` : text, t);
 
     setState("thinking");
     const rhythm = H.settings.RHYTHM[settings.rhythm];
-    const [reply] = await Promise.all([
-      H.brain.respond(text, { settings, memory, setName: (name) => update({ name }) }),
+    const [result] = await Promise.all([
+      H.brain.respond(text, { settings, memory, image, setName: (name) => update({ name }) }),
       wait((450 + Math.random() * 350) * rhythm),
     ]);
     setState("idle");
 
+    const reply = result.text;
+    const extras = result.sources?.length || result.images?.length ? { sources: result.sources || [], images: result.images || [] } : null;
     const rt = Date.now();
-    remember("horacio", reply, rt);
+    remember("horacio", reply, rt, extras);
     const node = addMessage("horacio", "", rt);
+    if (result.goalsChanged) renderGoals();
     const speaking = shouldSpeak(viaVoice);
+    const showExtras = () => extras && (renderExtras(node.parentElement, extras), scrollToEnd());
 
     if (speaking) {
       await Promise.all([
-        typeInto(node, reply),
+        typeInto(node, reply).then(showExtras),
         H.voice.speak(reply, speakOptions({
           onStart: () => setState("speaking"),
           onError: (code) => elevenFailed(code),
@@ -224,6 +278,7 @@
       if (el.orb.dataset.state === "speaking") setState("idle");
     } else {
       await typeInto(node, reply);
+      showExtras();
     }
     busy = false;
 
@@ -267,7 +322,7 @@
     const eleven = settings.engine === "elevenlabs"
       ? { key: settings.elKey, voiceId: settings.elVoiceId, model: settings.elModel }
       : null;
-    return { voiceName: settings.voiceName, rhythm: settings.rhythm, tone: settings.tone, eleven, ...extra };
+    return { voiceName: settings.voiceName, rhythm: settings.rhythm, tone: settings.tone, effect: settings.voiceFx, eleven, ...extra };
   }
 
   // Avisa cada tipo de falha uma vez por sessão, para não poluir a conversa.
@@ -407,7 +462,7 @@
 
   function restoreMemory() {
     memory.forEach((m) => {
-      const node = addMessage(m.role, m.text, m.t);
+      const node = addMessage(m.role, m.text, m.t, m.extras);
       node.parentElement.style.animation = "none";
     });
   }
@@ -444,6 +499,9 @@
     f.querySelector("#opt-ai-key").value = settings.aiKey;
     f.querySelector("#opt-ai-model").value = settings.aiModel;
     f.querySelector("#opt-ai-search").checked = settings.aiSearch;
+    f.querySelector(`input[name="voicefx"][value="${settings.voiceFx}"]`).checked = true;
+    $("#goals-status").textContent = "";
+    renderGoals();
     $("#ai-status").textContent = "";
     fillVoiceSelect();
   }
@@ -495,6 +553,7 @@
       else if (t.id === "opt-ai-key") update({ aiKey: t.value.trim() });
       else if (t.id === "opt-ai-model") update({ aiModel: t.value });
       else if (t.id === "opt-ai-search") update({ aiSearch: t.checked });
+      else if (t.name === "voicefx") update({ voiceFx: t.value });
       else if (t.id === "opt-el-voice") update({ elVoiceId: t.value.trim() });
       else if (t.id === "opt-el-key") update({ elKey: t.value.trim() });
       else if (t.id === "opt-el-model") update({ elModel: t.value.trim() || H.settings.defaults.elModel });
@@ -549,9 +608,152 @@
       }
     });
 
+    bindGoals();
+
+    $("#btn-forget-notes").addEventListener("click", () => {
+      H.ai.clearNotes();
+      $("#notes-status").textContent = "✓ Esqueci o que tinha anotado sobre você.";
+    });
+
     $("#btn-forget").addEventListener("click", () => {
       forget();
       el.sheet.close();
+    });
+  }
+
+  /* ---------- Fotos para o Horácio ver ---------- */
+
+  let pendingPhoto = null;
+
+  /** Reduz a foto (no máximo 1568 px) e converte em JPEG base64. */
+  function readPhoto(file) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, 1568 / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        URL.revokeObjectURL(img.src);
+        resolve({ mediaType: "image/jpeg", data: dataUrl.split(",")[1], preview: dataUrl });
+      };
+      img.onerror = reject;
+      img.src = URL.createObjectURL(file);
+    });
+  }
+
+  function clearPhoto() {
+    pendingPhoto = null;
+    $("#photo-chip").hidden = true;
+    $("#photo-input").value = "";
+  }
+
+  function bindPhoto() {
+    const input = $("#photo-input");
+    $("#btn-photo").addEventListener("click", () => input.click());
+    input.addEventListener("change", async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        pendingPhoto = await readPhoto(file);
+        $("#photo-chip img").src = pendingPhoto.preview;
+        $("#photo-chip").hidden = false;
+        el.input.focus();
+      } catch {
+        clearPhoto();
+      }
+    });
+    $("#photo-remove").addEventListener("click", clearPhoto);
+  }
+
+  /* ---------- Metas ---------- */
+
+  function renderGoals() {
+    const box = $("#goals-list");
+    if (!box) return;
+    const goals = H.goals.list();
+    box.replaceChildren();
+    if (!goals.length) {
+      const empty = document.createElement("p");
+      empty.className = "hint";
+      empty.textContent = "Nenhuma meta ainda.";
+      box.append(empty);
+      return;
+    }
+    for (const g of goals) {
+      const p = H.goals.plan(g);
+      const card = document.createElement("div");
+      card.className = "goal";
+      const head = document.createElement("div");
+      head.className = "goal-head";
+      const name = document.createElement("span");
+      name.className = "goal-name";
+      name.textContent = g.name;
+      const pct = document.createElement("span");
+      pct.className = "goal-pct";
+      pct.textContent = `${Math.round(p.pct)}%`;
+      head.append(name, pct);
+      const bar = document.createElement("div");
+      bar.className = "goal-bar";
+      const fill = document.createElement("span");
+      fill.style.width = `${p.pct}%`;
+      bar.append(fill);
+      const text = document.createElement("p");
+      text.className = "goal-text";
+      text.textContent = H.goals.describe(g).replace(/^[^:]+:\s*/, "");
+      const actions = document.createElement("div");
+      actions.className = "place-actions";
+      const add = document.createElement("button");
+      add.type = "button";
+      add.className = "btn small";
+      add.textContent = "Registrar progresso";
+      add.addEventListener("click", () => {
+        const v = prompt(`Quanto somar em “${g.name}”?${g.unit ? ` (${g.unit})` : ""}`);
+        const n = parseFloat(String(v || "").replace(/\./g, "").replace(",", "."));
+        if (!Number.isNaN(n)) {
+          H.goals.progress(g.name, n);
+          renderGoals();
+        }
+      });
+      const del = document.createElement("button");
+      del.type = "button";
+      del.className = "btn small ghost";
+      del.textContent = "Remover";
+      del.addEventListener("click", () => {
+        if (confirm(`Remover a meta “${g.name}”?`)) {
+          H.goals.remove(g.name);
+          renderGoals();
+        }
+      });
+      actions.append(add, del);
+      card.append(head, bar, text, actions);
+      box.append(card);
+    }
+  }
+
+  function bindGoals() {
+    $("#btn-goal-add").addEventListener("click", () => {
+      const f = el.form;
+      const name = f.querySelector("#goal-name").value.trim();
+      const target = parseFloat(f.querySelector("#goal-target").value.replace(/\./g, "").replace(",", "."));
+      const current = parseFloat((f.querySelector("#goal-current").value || "0").replace(/\./g, "").replace(",", ".")) || 0;
+      const status = $("#goals-status");
+      if (!name || !(target > 0)) {
+        status.textContent = "Dê um nome e um valor de alvo maior que zero.";
+        return;
+      }
+      H.goals.upsert({
+        name,
+        target,
+        current,
+        unit: f.querySelector("#goal-unit").value.trim(),
+        deadline: f.querySelector("#goal-deadline").value,
+      });
+      ["#goal-name", "#goal-target", "#goal-current", "#goal-unit", "#goal-deadline"].forEach((id) => (f.querySelector(id).value = ""));
+      status.textContent = `✓ Meta “${name}” criada.`;
+      renderGoals();
     });
   }
 
@@ -684,12 +886,15 @@
     el.composer.addEventListener("submit", (e) => {
       e.preventDefault();
       if (H.voice.isListening()) { H.voice.stopListening(); return; }
-      const text = el.input.value.trim();
+      const image = pendingPhoto;
+      const text = el.input.value.trim() || (image ? "O que você vê nesta imagem?" : "");
       if (!text || busy) return;
       H.voice.unlock();
       el.input.value = "";
-      send(text);
+      clearPhoto();
+      send(text, { image });
     });
+    bindPhoto();
 
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "hidden") markSeen();

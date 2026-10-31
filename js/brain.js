@@ -198,42 +198,55 @@
     "Ainda não sei responder a isso sozinho. Para eu conversar sobre qualquer assunto, ative minha inteligência em Personalização → Inteligência. " +
     "Sem ela, eu cuido de horas, lembretes, previsão do tempo, contas e distância até sua casa.";
 
-  async function respond(input, { settings, setName, memory = [] }) {
-    const named = input.match(NAME_PATTERN);
+  /**
+   * Responde ao dono. Resolve com { text, sources?, images?, goalsChanged? }.
+   * Com `image` (foto enviada), vai direto para a IA.
+   */
+  async function respond(input, { settings, setName, memory = [], image = null }) {
+    const named = !image && input.match(NAME_PATTERN);
     const name = named && extractName(named[1]);
     if (name && setName) {
       setName(name);
       const creator = /\bcriador\b/i.test(input) ? " É uma honra conhecer quem me criou. Estou ao seu dispor." : " A partir de agora, é assim que vou chamar você.";
-      return `Muito prazer, ${name}.${creator}`;
+      return { text: `Muito prazer, ${name}.${creator}` };
     }
 
     const text = normalize(input);
     const now = new Date();
     let reply = null;
-    for (const intent of [...intents.slice(0, 1), ...(H.skills?.intents || []), ...intents.slice(1)]) {
-      if (!intent.match.test(text) || (intent.also && !intent.also.test(text))) continue;
-      reply = await intent.reply({ now, settings, text, input });
-      if (reply) break;
+    if (!image) {
+      const all = [...intents.slice(0, 1), ...(H.goals?.intents || []), ...(H.skills?.intents || []), ...intents.slice(1)];
+      for (const intent of all) {
+        if (!intent.match.test(text) || (intent.also && !intent.also.test(text))) continue;
+        const r = await intent.reply({ now, settings, text, input });
+        if (r) {
+          reply = { text: r };
+          break;
+        }
+      }
     }
 
     if (!reply) {
       if (H.ai?.isReady(settings)) {
         try {
-          reply = await H.ai.ask(input, { settings, memory });
+          reply = await H.ai.ask(input, { settings, memory, image });
         } catch (e) {
-          reply = AI_ERRORS[e.code] || AI_ERRORS.service;
+          reply = { text: AI_ERRORS[e.code] || AI_ERRORS.service };
         }
       } else {
-        reply = NO_AI;
+        reply = { text: image ? "Para eu ver imagens, ative minha inteligência em Personalização → Inteligência." : NO_AI };
       }
     }
 
     if (!settings.name) {
-      if (askedName) return reply;
-      askedName = true;
-      return `${reply}\nAliás, como devo chamar você? Diga “meu nome é…”.`;
+      if (!askedName) {
+        askedName = true;
+        reply.text = `${reply.text}\nAliás, como devo chamar você? Diga “meu nome é…”.`;
+      }
+      return reply;
     }
-    return address(reply, settings.name);
+    reply.text = address(reply.text, settings.name);
+    return reply;
   }
 
   H.brain = { respond };

@@ -283,6 +283,38 @@ svg { display: block; }
 
 .msg p { margin: 0; white-space: pre-line; }
 
+/* Fontes, imagens e fotos nas mensagens */
+.msg-photo {
+  display: block;
+  max-width: 180px;
+  max-height: 180px;
+  margin: 2px 0 8px auto;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+}
+.msg-images {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  margin-top: 10px;
+}
+.msg-images a { display: block; aspect-ratio: 4 / 3; overflow: hidden; border-radius: 10px; border: 1px solid var(--line); }
+.msg-images img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.msg-credit { display: block; margin-top: 4px; font-size: .62rem; color: var(--muted); letter-spacing: .04em; }
+.msg-sources { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.msg-sources a {
+  font-size: .72rem;
+  padding: 4px 10px;
+  border-radius: 99px;
+  border: 1px solid var(--line);
+  color: var(--gold);
+  text-decoration: none;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
 /* ---------- Composer ---------- */
@@ -566,6 +598,42 @@ select.text-input {
   cursor: pointer;
 }
 .btn.danger { color: var(--red); border-color: color-mix(in srgb, var(--red) 40%, transparent); }
+
+/* Foto anexada, acima da caixa de mensagem */
+.photo-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 6px 6px 8px;
+  margin-top: 6px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  font-size: .85rem;
+  color: var(--muted);
+}
+.photo-chip[hidden] { display: none; }
+.photo-chip img { width: 40px; height: 40px; object-fit: cover; border-radius: 8px; }
+.photo-chip span { flex: 1; }
+
+/* Metas */
+.goal {
+  padding: 14px;
+  margin-bottom: 10px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+}
+.goal-head { display: flex; justify-content: space-between; align-items: baseline; }
+.goal-name { font-size: .95rem; }
+.goal-name::first-letter { text-transform: uppercase; }
+.goal-pct { font-size: .85rem; color: var(--gold); font-variant-numeric: tabular-nums; }
+.goal-bar { height: 6px; margin: 8px 0; border-radius: 99px; background: var(--line); overflow: hidden; }
+.goal-bar span { display: block; height: 100%; background: var(--gold); border-radius: inherit; }
+.goal-text { margin: 0; font-size: .82rem; line-height: 1.45; color: var(--muted); }
+.goal-form { display: grid; gap: 8px; margin-top: 4px; }
+.goal-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.goal-form .text-input { min-width: 0; }
 
 /* Lugares */
 .place {

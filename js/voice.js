@@ -27,6 +27,13 @@
 
   // Como o reconhecedor costuma escrever "Horácio".
   const WAKE_WORD = /\b(h?or[aá]cio|o r[aá]cio|ho racio|horas cio)\b/i;
+  // No Android o começo da palavra pode se perder enquanto o reconhecedor liga: aceita pedaços.
+  const WAKE_FRAGMENT = /^\s*(h?o?r[aá]cio|r[aá]cio|ac[ií]o|oraci[oa]|o r[aá]cio)\b/i;
+
+  // No Android, o próprio sistema toca um bipe toda vez que o reconhecedor liga ou desliga.
+  // Para não bipar sem parar, lá o Horácio só mede o volume do microfone (sem bipe)
+  // e liga o reconhecedor apenas quando alguém fala.
+  const ANDROID = /Android/i.test(navigator.userAgent);
 
   let rec = null;
   let unlocked = false;
@@ -121,7 +128,54 @@
   function stopWake() {
     wake.enabled = false;
     clearTimeout(wake.timer);
+    stopVad();
     wake.rec?.abort();
+  }
+
+  /* Detector de voz silencioso (Android) */
+
+  const vad = { stream: null, ctx: null, timer: 0 };
+
+  async function startVad() {
+    if (vad.stream || !navigator.mediaDevices?.getUserMedia) return;
+    try {
+      vad.stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      });
+    } catch {
+      // Sem acesso ao microfone por esse caminho: volta ao modo comum.
+      wake.triggered = true;
+      return runWake();
+    }
+    if (!wake.enabled || wake.rec || rec) return stopVad();
+    vad.ctx ||= new (window.AudioContext || window.webkitAudioContext)();
+    vad.ctx.resume?.().catch(() => {});
+    const analyser = vad.ctx.createAnalyser();
+    analyser.fftSize = 1024;
+    vad.ctx.createMediaStreamSource(vad.stream).connect(analyser);
+    const buf = new Float32Array(analyser.fftSize);
+    let noise = 0.01;
+    let loud = 0;
+    vad.timer = setInterval(() => {
+      analyser.getFloatTimeDomainData(buf);
+      let sum = 0;
+      for (const v of buf) sum += v * v;
+      const rms = Math.sqrt(sum / buf.length);
+      // O nível de ruído do ambiente se ajusta sozinho.
+      if (rms < noise * 2) noise = noise * 0.95 + rms * 0.05;
+      loud = rms > Math.max(0.02, noise * 3.5) ? loud + 1 : 0;
+      if (loud >= 2) {
+        stopVad();
+        wake.triggered = true;
+        runWake();
+      }
+    }, 60);
+  }
+
+  function stopVad() {
+    clearInterval(vad.timer);
+    vad.stream?.getTracks().forEach((t) => t.stop());
+    vad.stream = null;
   }
 
   const isWakeOn = () => wake.enabled;
@@ -129,10 +183,14 @@
   function runWake() {
     clearTimeout(wake.timer);
     if (!wake.enabled || wake.rec || rec || isSpeaking()) return;
+    if (ANDROID && !wake.triggered) return startVad();
+    const fromVad = wake.triggered;
+    wake.triggered = false;
 
     const r = new Recognition();
     r.lang = "pt-BR";
-    r.continuous = true;
+    // Acionado pelo detector de voz: escuta uma frase só (menos bipes).
+    r.continuous = !fromVad;
     r.interimResults = false;
     r.maxAlternatives = 3;
     wake.rec = r;
@@ -145,10 +203,11 @@
         const result = e.results[i];
         if (!result.isFinal) continue;
         const alts = Array.from(result, (a) => a.transcript);
-        const said = alts.find((t) => WAKE_WORD.test(t));
+        const pattern = fromVad && !alts.some((t) => WAKE_WORD.test(t)) ? WAKE_FRAGMENT : WAKE_WORD;
+        const said = alts.find((t) => pattern.test(t));
         if (!said) continue;
         wake.failures = 0;
-        const command = said.slice(said.search(WAKE_WORD)).replace(WAKE_WORD, "").replace(/^[\s,.!?]+/, "").trim();
+        const command = said.slice(said.search(pattern)).replace(pattern, "").replace(/^[\s,.!?]+/, "").trim();
         r.abort();
         if (command) wake.handlers.onCommand?.(command);
         else wake.handlers.onWake?.();
@@ -194,6 +253,7 @@
   /** Suspende a vigília (enquanto o Horácio fala ou ouve uma frase). */
   async function pauseWake() {
     clearTimeout(wake.timer);
+    stopVad();
     if (!wake.rec) return;
     const ended = wake.ended;
     wake.rec.abort();
@@ -312,7 +372,92 @@
     return url;
   }
 
-  function play(url, onStart) {
+  /* ---------- Efeitos de voz (só para o áudio do ElevenLabs) ---------- */
+
+  // Timbre sintético: graves encorpados, brilho nos agudos, um leve "pente" metálico
+  // (atraso curto com realimentação) e uma modulação em anel bem sutil.
+  const FX = {
+    assistente: { low: 3, high: 3, delay: 0.006, feedback: 0.2, wet: 0.25, ring: 0.08, ringHz: 60 },
+    robo: { low: 4, high: 2, delay: 0.011, feedback: 0.45, wet: 0.45, ring: 0.3, ringHz: 45 },
+  };
+  const fx = { ctx: null, source: null, preset: "natural", nodes: [] };
+
+  function ensureFx() {
+    if (fx.ctx || !audio) return fx.ctx;
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    fx.ctx = new Ctx();
+    fx.source = fx.ctx.createMediaElementSource(audio);
+    buildFx();
+    return fx.ctx;
+  }
+
+  function buildFx() {
+    const c = fx.ctx;
+    fx.source.disconnect();
+    fx.nodes.forEach((n) => {
+      try { n.disconnect(); n.stop?.(); } catch {}
+    });
+    fx.nodes = [];
+    const P = FX[fx.preset];
+    if (!P) {
+      fx.source.connect(c.destination);
+      return;
+    }
+    const hp = c.createBiquadFilter();
+    hp.type = "highpass";
+    hp.frequency.value = 80;
+    const low = c.createBiquadFilter();
+    low.type = "lowshelf";
+    low.frequency.value = 180;
+    low.gain.value = P.low;
+    const high = c.createBiquadFilter();
+    high.type = "highshelf";
+    high.frequency.value = 5000;
+    high.gain.value = P.high;
+    const dry = c.createGain();
+    dry.gain.value = 1 - P.wet * 0.5;
+    const delay = c.createDelay(0.05);
+    delay.delayTime.value = P.delay;
+    const feedback = c.createGain();
+    feedback.gain.value = P.feedback;
+    const wet = c.createGain();
+    wet.gain.value = P.wet;
+    const mix = c.createGain();
+    const ring = c.createGain();
+    ring.gain.value = 1 - P.ring;
+    const osc = c.createOscillator();
+    osc.frequency.value = P.ringHz;
+    const depth = c.createGain();
+    depth.gain.value = P.ring;
+    osc.connect(depth).connect(ring.gain);
+    osc.start();
+    const comp = c.createDynamicsCompressor();
+    comp.threshold.value = -20;
+    comp.ratio.value = 3;
+
+    fx.source.connect(hp).connect(low).connect(high);
+    high.connect(dry).connect(mix);
+    high.connect(delay);
+    delay.connect(feedback).connect(delay);
+    delay.connect(wet).connect(mix);
+    mix.connect(ring).connect(comp).connect(c.destination);
+    fx.nodes = [hp, low, high, dry, delay, feedback, wet, mix, ring, osc, depth, comp];
+  }
+
+  function setEffect(preset) {
+    const next = FX[preset] ? preset : "natural";
+    if (next === fx.preset) return;
+    fx.preset = next;
+    if (fx.ctx) buildFx();
+  }
+
+  function play(url, onStart, effect) {
+    setEffect(effect);
+    if (fx.preset !== "natural" || fx.ctx) {
+      ensureFx();
+      fx.ctx?.resume?.().catch(() => {});
+    }
     return new Promise((resolve, reject) => {
       audio.onplaying = () => onStart?.();
       audio.onended = audio.onpause = audio.onerror = () => resolve();
@@ -350,7 +495,7 @@
       const el = opts.eleven;
       if (el?.key && el?.voiceId && audio) {
         try {
-          await play(await elevenAudio(speakable(text), el), opts.onStart);
+          await play(await elevenAudio(speakable(text), el), opts.onStart, opts.effect);
           return;
         } catch (e) {
           if (e.code === "aborted") return;
@@ -387,6 +532,8 @@
     if (audio) {
       audio.src = SILENCE;
       audio.play().catch(() => {});
+      // O contexto de áudio dos efeitos precisa nascer de um toque (iOS).
+      ensureFx()?.resume?.().catch(() => {});
     }
   }
 

@@ -22,6 +22,7 @@
     aiKey: "",          // chave da Anthropic; fica apenas neste aparelho
     aiModel: "claude-opus-5-5",
     aiSearch: true,     // a IA pode buscar na web
+    voiceFx: "assistente", // natural | assistente | robo (só na voz do ElevenLabs)
   };
 
   const RHYTHM = { calmo: 1.6, sereno: 1, vivo: 0.6 };
