@@ -97,7 +97,7 @@ Com a opção ligada e o site aberto, basta dizer **"Horácio, que horas são?"*
 
 - O navegador só libera o microfone depois de um toque, então ao abrir o site é preciso tocar uma vez na tela. O microfone fica com um ponto vermelho piscando quando está de prontidão.
 - Funciona apenas com o site aberto e a tela ligada; em segundo plano o navegador desliga o microfone.
-- No Android, o sistema toca um bipe toda vez que o reconhecimento de voz liga. Para não bipar sem parar, lá o Horácio mede só o volume do microfone (sem bipe) e liga o reconhecimento apenas quando alguém fala. Dica: diga "Horácio" e o pedido numa frase só.
+- No Android, o sistema toca um bipe toda vez que o reconhecimento de voz liga. Para não bipar sem parar, lá o Horácio mede só o volume do microfone (sem bipe) e liga o reconhecimento apenas quando alguém fala. Como chamar no Android: diga **"Horácio"**, faça uma pausa curta (o bipe toca) e então faça o pedido. Uma palavra curta seguida de pausa é tratada como chamado; fala longa e contínua (TV, conversa) só é atendida se contiver "Horácio".
 
 ## Paletas
 

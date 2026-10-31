@@ -373,6 +373,12 @@
     return {
       onCommand: (text) => { if (!busy) send(text, { viaVoice: true }); },
       onWake: () => startListening(),
+      // No Android, depois de ouvir o chamado, o Horácio mostra que está ouvindo o pedido.
+      onListening: (on) => {
+        el.mic.classList.toggle("is-active", on);
+        if (on && el.orb.dataset.state === "idle") setState("listening");
+        else if (!on && el.orb.dataset.state === "listening") setState("idle");
+      },
       onStop: (code) => {
         el.mic.classList.remove("is-standby");
         if (code === "not-allowed" || code === "service-not-allowed") update({ wake: false });

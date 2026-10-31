@@ -155,7 +155,14 @@
     vad.ctx.createMediaStreamSource(vad.stream).connect(analyser);
     const buf = new Float32Array(analyser.fftSize);
     let noise = 0.01;
-    let loud = 0;
+    let burstStart = 0;
+    let quiet = 0;
+    const STEP = 60;
+    const trigger = (mode) => {
+      stopVad();
+      wake.triggered = mode;
+      runWake();
+    };
     vad.timer = setInterval(() => {
       analyser.getFloatTimeDomainData(buf);
       let sum = 0;
@@ -163,13 +170,24 @@
       const rms = Math.sqrt(sum / buf.length);
       // O nível de ruído do ambiente se ajusta sozinho.
       if (rms < noise * 2) noise = noise * 0.95 + rms * 0.05;
-      loud = rms > Math.max(0.02, noise * 3.5) ? loud + 1 : 0;
-      if (loud >= 2) {
-        stopVad();
-        wake.triggered = true;
-        runWake();
+      const loud = rms > Math.max(0.02, noise * 3.5);
+      const now = performance.now();
+      if (loud) {
+        burstStart ||= now;
+        quiet = 0;
+        // Fala longa e contínua: liga já e exige "Horácio" no que for entendido.
+        if (now - burstStart > 1600) trigger("long");
+      } else if (burstStart) {
+        quiet += STEP;
+        if (quiet >= 300) {
+          const duration = now - burstStart - quiet;
+          burstStart = 0;
+          quiet = 0;
+          // Uma palavra curta seguida de pausa ("Horácio…"): o que vier depois é o pedido.
+          if (duration >= 150) trigger("call");
+        }
       }
-    }, 60);
+    }, STEP);
   }
 
   function stopVad() {
@@ -184,13 +202,16 @@
     clearTimeout(wake.timer);
     if (!wake.enabled || wake.rec || rec || isSpeaking()) return;
     if (ANDROID && !wake.triggered) return startVad();
-    const fromVad = wake.triggered;
+    // "call": chamaram o Horácio e fizeram uma pausa; "long": fala contínua; true: sem detector.
+    const mode = wake.triggered;
+    const fromVad = mode === "long";
+    const isCall = mode === "call";
     wake.triggered = false;
 
     const r = new Recognition();
     r.lang = "pt-BR";
     // Acionado pelo detector de voz: escuta uma frase só (menos bipes).
-    r.continuous = !fromVad;
+    r.continuous = !(fromVad || isCall);
     r.interimResults = false;
     r.maxAlternatives = 3;
     wake.rec = r;
@@ -198,11 +219,22 @@
     let finish;
     wake.ended = new Promise((res) => (finish = res));
 
+    if (isCall) wake.handlers.onListening?.(true);
+
     r.onresult = (e) => {
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const result = e.results[i];
         if (!result.isFinal) continue;
         const alts = Array.from(result, (a) => a.transcript);
+        if (isCall) {
+          // Depois do chamado, a próxima frase é o pedido (com ou sem "Horácio" na frente).
+          const said = alts[0].replace(WAKE_WORD, "").replace(WAKE_FRAGMENT, "").replace(/^[\s,.!?]+/, "").trim();
+          wake.failures = 0;
+          r.abort();
+          if (said) wake.handlers.onCommand?.(said);
+          else wake.handlers.onWake?.();
+          return;
+        }
         const pattern = fromVad && !alts.some((t) => WAKE_WORD.test(t)) ? WAKE_FRAGMENT : WAKE_WORD;
         const said = alts.find((t) => pattern.test(t));
         if (!said) continue;
@@ -227,6 +259,7 @@
     r.onend = () => {
       wake.rec = null;
       finish();
+      if (isCall) wake.handlers.onListening?.(false);
       if (wake.failures > 5) {
         wake.enabled = false;
         wake.handlers.onStop?.("network");
