@@ -136,6 +136,7 @@
         "· Quanto tempo levo para fazer 120 km a 80 km/h?\n" +
         "· Quanto rende 1000 reais a 1% ao mês por 12 meses? · Parcela de 10 mil em 24 vezes a 2% ao mês\n" +
         "· Quanto está o dólar? · Qual a população do Japão? · Com quem a Bolívia faz fronteira?\n" +
+        "· Quais as notícias de hoje? · Principais notícias da Europa\n" +
         "· E se você estiver triste, ansioso ou cansado, pode falar comigo.",
     },
     {
@@ -204,8 +205,7 @@
   };
 
   const NO_AI =
-    "Não encontrei uma resposta para isso. Para eu conversar sobre qualquer assunto, ative minha inteligência em Personalização → Inteligência. " +
-    "Sem ela, eu cuido de horas, lembretes, clima, contas, metas e perguntas de conhecimento geral.";
+    "Não encontrei uma resposta para isso. Tente perguntar de outro jeito, ou diga “o que você sabe fazer” para ver exemplos.";
   const NO_ANSWER = "Não encontrei uma resposta para isso. Tente perguntar de outro jeito, por exemplo “o que é…” ou “quem foi…”.";
   let hintedAI = false;
 
@@ -235,12 +235,20 @@
     const now = new Date();
     let reply = null;
     if (!image) {
-      const all = [...intents.slice(0, 1), ...(H.smart?.intents || []), ...(H.goals?.intents || []), ...(H.skills?.intents || []), ...intents.slice(1)];
+      const all = [
+        ...intents.slice(0, 1),
+        ...(H.news?.intents || []),
+        ...(H.smart?.intents || []),
+        ...(H.goals?.intents || []),
+        ...(H.skills?.intents || []),
+        ...intents.slice(1),
+      ];
       for (const intent of all) {
         if (!intent.match.test(text) || (intent.also && !intent.also.test(text))) continue;
         const r = await intent.reply({ now, settings, text, input });
         if (r) {
-          reply = { text: r };
+          // Habilidades devolvem texto, ou { text, sources, images }
+          reply = typeof r === "string" ? { text: r } : r;
           break;
         }
       }

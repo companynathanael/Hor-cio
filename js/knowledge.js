@@ -30,6 +30,25 @@
     return res.json();
   }
 
+  const STOP = new Set(["qual", "quais", "quem", "como", "onde", "quando", "porque", "sobre", "principal", "principais",
+    "que", "uma", "um", "para", "pra", "com", "sem", "mais", "menos", "muito", "isso", "esse", "essa", "este", "esta",
+    "ocorre", "ocorreu", "acontece", "aconteceu", "hoje", "agora", "atual", "atualmente", "sabe", "fala", "fale"]);
+
+  function words(s) {
+    return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(/[^a-z0-9]+/)
+      .filter((w) => w.length >= 4 && !STOP.has(w));
+  }
+
+  /** O artigo tem a ver com a pergunta? Ao menos uma palavra importante em comum com o título ou o início. */
+  function relevant(topic, page) {
+    const asked = words(topic);
+    if (!asked.length) return true;
+    const found = new Set(words(`${page.title} ${(page.extract || "").slice(0, 300)}`));
+    const hits = asked.filter((w) => found.has(w) || [...found].some((f) => f.startsWith(w.slice(0, 5))));
+    // Perguntas longas precisam de mais de uma palavra em comum
+    return hits.length >= (asked.length >= 4 ? 2 : 1);
+  }
+
   /** As 2 ou 3 primeiras frases, sem passar muito de 400 caracteres. */
   function brief(text) {
     const sentences = text.replace(/\s*\([^)]*\)/g, "").match(/[^.!?]+[.!?]+/g) || [text];
@@ -65,6 +84,7 @@
         continue;
       }
       if (page.type === "disambiguation" || !page.extract) continue;
+      if (!relevant(topic, page)) continue;
       const url = page.content_urls?.mobile?.page || page.content_urls?.desktop?.page || `${WIKI}/wiki/${encodeURIComponent(hit.title)}`;
       const images = page.thumbnail?.source
         ? [{ thumb: page.thumbnail.source, url, title: page.title }]
