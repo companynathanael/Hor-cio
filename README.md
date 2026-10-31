@@ -28,6 +28,11 @@ python3 -m http.server 8080
 - **Contas:** "quanto é 15% de 230", "12 vezes 8 mais 4", "raiz de 81".
 - **Dias até uma data:** "quantos dias faltam para o Natal / 15 de março".
 - **Cara ou coroa e dados.**
+- **Conversões:** "quantos metros tem 3,5 km", "10 km² em hectares", "30 graus Celsius em Fahrenheit", "100 km/h em m/s" — comprimento, área, volume, massa, tempo, velocidade, temperatura e dados.
+- **Tempos e distâncias aproximados:** "quanto tempo levo para fazer 120 km a 80 km/h", "quanto tempo andando 5 km", "qual a velocidade para fazer 300 km em 4 horas".
+- **Finanças:** juros compostos e aportes ("guardando 500 por mês a 1% ao mês por 5 anos"), parcelas ("10 mil em 24 vezes a 2% ao mês"), descontos e porcentagens, orçamento 50/30/20, dicas e cotação de moedas ("quanto está o dólar?", "500 reais em euros", pela AwesomeAPI, gratuita).
+- **Geopolítica:** capital, população, área, moeda, idiomas, continente e fronteiras de qualquer país (REST Countries, gratuito).
+- **Inteligência emocional:** acolhe quando você diz que está triste, ansioso, cansado, sozinho ou com raiva, com dicas simples; em sinais de crise, indica o CVV (188).
 - **Conhecimento geral sem chave:** "o que é um buraco negro?", "qual a capital da França?", "quem foi Santos Dumont?" — resumo do verbete da Wikipédia em português, com a fonte e a imagem do artigo.
 - **Distância até casa e trabalho:** "Horácio, a quantos minutos estou de casa?" usa o GPS do aparelho e calcula a rota de carro, bicicleta ou a pé.
 - **Chama você pelo nome** em todas as respostas. Diga "meu nome é…" ou preencha em Personalização.
@@ -124,6 +129,7 @@ js/places.js          localização, endereços e rotas (OpenStreetMap)
 js/skills.js          habilidades locais: lembretes, clima, contas, datas, sorte
 js/goals.js           metas de longo prazo: plano e projeção
 js/knowledge.js       conhecimento geral pela Wikipédia (sem chave de IA)
+js/smart.js           conversões, tempos, finanças, câmbio, países e acolhimento emocional
 js/ai.js              conversa com a IA Claude (chave do próprio dono)
 js/vendor/            SDK oficial da Anthropic empacotado para o navegador
 assets/logo.svg       logo do Horácio (vetor; assume a cor do tema)

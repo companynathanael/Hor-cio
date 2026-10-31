@@ -132,7 +132,11 @@
         "· Quanto falta para a meia-noite?\n· Quanto do ano já passou?\n" +
         "· A quantos minutos estou de casa?\n· Me lembra em 10 minutos de tirar o bolo\n" +
         "· Como está o tempo hoje?\n· Quanto é 15% de 230?\n· Quantos dias faltam para o Natal?\n" +
-        "· Cara ou coroa\nCom a inteligência ativada, converso sobre qualquer assunto.",
+        "· Cara ou coroa\n· Quantos metros tem 3,5 km? · 10 km² em hectares\n" +
+        "· Quanto tempo levo para fazer 120 km a 80 km/h?\n" +
+        "· Quanto rende 1000 reais a 1% ao mês por 12 meses? · Parcela de 10 mil em 24 vezes a 2% ao mês\n" +
+        "· Quanto está o dólar? · Qual a população do Japão? · Com quem a Bolívia faz fronteira?\n" +
+        "· E se você estiver triste, ansioso ou cansado, pode falar comigo.",
     },
     {
       match: /\b(voz|microfone|falar comigo|ouvir)\b/,
@@ -173,9 +177,14 @@
    * Chama o dono pelo nome: alterna entre o início ("Nathanael, são 20:10.")
    * e o fim da primeira frase ("São 20:10, Nathanael.").
    */
+  // Palavras que podem ir para minúscula depois do nome ("Nathanael, são 20:10").
+  // Nomes próprios ("Japão", "Paris") não: nesse caso o nome vai no fim da frase.
+  const STARTERS = /^(a|o|as|os|um|uma|com|em|na|no|nas|nos|para|se|sou|são|é|faltam|falta|hoje|agora|amanhã|você|dá|deu|pronto|combinado|anotado|timer|financiando|segundo|não|sinto|que|respira|ainda|minha|meu|essa|esse|isso|meta|mostrei|quando|tudo|disponha|sempre|muito|boa|bom|vejo|algumas|quer|uma|entendo|raiva|cansaço|ansiedade|fico|excelente|ótimo|rolei|já|aqui|está|estou|lembrete|nenhuma|mas|então|de|do|da|seus?|suas?|cerca|uns|umas|em|até)$/i;
+
   function address(reply, name) {
     if (!name || reply.includes(name)) return reply;
-    if (Math.random() < 0.5) {
+    const first = reply.split(/\s/)[0].replace(/[^\p{L}]/gu, "");
+    if (Math.random() < 0.5 && STARTERS.test(first)) {
       return `${name}, ${reply.charAt(0).toLowerCase()}${reply.slice(1)}`;
     }
     const end = reply.search(/[.!?](\s|$)/);
@@ -226,7 +235,7 @@
     const now = new Date();
     let reply = null;
     if (!image) {
-      const all = [...intents.slice(0, 1), ...(H.goals?.intents || []), ...(H.skills?.intents || []), ...intents.slice(1)];
+      const all = [...intents.slice(0, 1), ...(H.smart?.intents || []), ...(H.goals?.intents || []), ...(H.skills?.intents || []), ...intents.slice(1)];
       for (const intent of all) {
         if (!intent.match.test(text) || (intent.also && !intent.also.test(text))) continue;
         const r = await intent.reply({ now, settings, text, input });
